@@ -1,0 +1,308 @@
+<resources>
+    <string name="app_name">Vault Files</string>
+
+    <!-- ===== Bottom navigation ===== -->
+    <string name="nav_storage">Storage</string>
+    <string name="nav_files">Files</string>
+    <string name="nav_vault">Vault</string>
+    <string name="nav_settings">Settings</string>
+    <string name="cd_storage_stats">Storage Stats</string>
+    <string name="cd_file_explorer">File Explorer</string>
+    <string name="cd_secure_vault">Secure Vault</string>
+    <string name="cd_settings_options">Settings Options</string>
+
+    <!-- ===== Common actions ===== -->
+    <string name="action_create">Create</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_verify">Verify</string>
+    <string name="action_compress">Compress</string>
+    <string name="action_save_file">Save File</string>
+    <string name="action_ok">OK</string>
+    <string name="action_ok_understand">Ok, I understand</string>
+    <string name="action_change">Change</string>
+    <string name="action_setup">Setup</string>
+    <string name="action_modify">Modify</string>
+    <string name="action_save_pin">Save PIN</string>
+    <string name="action_decrypt">Decrypt</string>
+    <string name="common_yes">Yes</string>
+    <string name="common_no">No</string>
+    <string name="cd_back">Back</string>
+
+    <!-- ===== App lock screen ===== -->
+    <string name="applock_biometric_title">App Locked</string>
+    <string name="applock_biometric_subtitle">Authenticate to unlock the secure Storage application</string>
+    <string name="applock_biometric_subtitle_short">Authenticate to unlock</string>
+    <string name="cd_app_locked_shield">App Locked Shield</string>
+    <string name="applock_title">Application Locked</string>
+    <string name="applock_message">This application is encrypted and passcode protected. Enter your secure PIN or authenticate with biometrics to unlock.</string>
+    <string name="applock_pin_label">App PIN</string>
+    <string name="applock_pin_error">Incorrect passcode PIN. Please try again.</string>
+    <string name="cd_unlock_biometrics">Unlock with Biometrics</string>
+    <string name="applock_unlock_btn">Unlock App</string>
+
+    <!-- ===== About screen ===== -->
+    <string name="about_title">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_build_info">Build Information</string>
+    <string name="about_author">Author</string>
+    <string name="about_ide_used">IDE Used</string>
+    <string name="about_ai_version">AI Used Version</string>
+    <string name="about_last_build_date">Last Build Date</string>
+    <string name="about_made_with">Made with </string>
+    <string name="about_from_india"> from India</string>
+    <string name="cd_love">love</string>
+
+    <!-- ===== Storage analyzer screen ===== -->
+    <string name="storage_analysis_title">Storage Analysis</string>
+    <string name="storage_scope_device">Entire device</string>
+    <string name="storage_scope_sandbox">App sandbox</string>
+    <string name="source_app_sandbox">App Sandbox</string>
+    <string name="source_entire_device">Entire Device</string>
+    <string name="perm_all_files_title">All Files Access Required</string>
+    <string name="perm_all_files_message">To scan all folders and files on this device, the application needs \'All Files Access\' authorization. Your security and personal privacy are fully respected.</string>
+    <string name="perm_grant_storage_access">Grant Storage Access</string>
+    <string name="cd_permission_required">Permission Required</string>
+    <string name="storage_breakdown">Storage breakdown</string>
+    <string name="storage_see_all">See all</string>
+    <string name="storage_percent_used">%1$d%% used</string>
+    <string name="storage_free_of">%1$s free of %2$s</string>
+    <string name="vault_files_count_label">files in Vault</string>
+    <string name="vault_encrypted_label">%1$s encrypted</string>
+    <string name="vault_open">Open vault</string>
+    <string name="cat_images">Images</string>
+    <string name="cat_videos">Videos</string>
+    <string name="cat_audio_tracks">Audio Tracks</string>
+    <string name="cat_documents">Documents</string>
+    <string name="cat_archives">Archives</string>
+    <string name="cat_other_formats">Other Formats</string>
+
+    <!-- ===== File explorer screen ===== -->
+    <string name="sort_name">Name</string>
+    <string name="sort_size">Size</string>
+    <string name="sort_date">Date</string>
+    <string name="sort_by">Sort by %1$s</string>
+    <string name="cd_sort">Sort</string>
+    <string name="files_filter_chip">%1$s · %2$d</string>
+    <string name="cd_clear_filter">Clear filter</string>
+    <string name="cd_navigate_up">Up</string>
+    <string name="files_breadcrumb_summary">%1$s · %2$s</string>
+    <string name="cd_new_folder">New Folder</string>
+    <string name="cd_new_text_file">New Text File</string>
+    <string name="files_search_placeholder">Search files and folders</string>
+    <string name="cd_clear_search">Clear search</string>
+    <string name="files_all_category_header">ALL %1$s</string>
+    <string name="files_all_items">All items</string>
+    <string name="files_scanning_category">Scanning %1$s…</string>
+    <string name="files_no_matching">No matching items</string>
+    <string name="files_no_category_found">No %1$s found</string>
+    <string name="files_empty_folder">This folder is empty</string>
+    <string name="files_no_match_detail">Nothing here matches \"%1$s\". Try a different search.</string>
+    <string name="files_no_category_detail">There are no files of this type in the current storage source.</string>
+    <string name="files_empty_folder_detail">Create new folders or write text files using the buttons in the header.</string>
+    <string name="cd_empty_folder">Empty Folder</string>
+    <string name="perm_device_access_title">Device Storage Access Required</string>
+    <string name="perm_device_access_message">To browse and inspect files/folders on this device\'s storage, you must authorize \'All Files Access\' manually in android system settings.</string>
+    <string name="perm_open_storage_settings">Open Storage Settings</string>
+
+    <!-- Category filter display labels -->
+    <string name="filter_label_images">Images</string>
+    <string name="filter_label_videos">Videos</string>
+    <string name="filter_label_audio">Audio</string>
+    <string name="filter_label_documents">Documents</string>
+    <string name="filter_label_archives">Archives</string>
+    <string name="filter_label_other">Other files</string>
+    <string name="filter_label_files">Files</string>
+
+    <!-- Path breadcrumb -->
+    <string name="path_main_storage">Main Storage</string>
+    <string name="path_storage_prefix">Storage</string>
+
+    <!-- Hidden items banner -->
+    <string name="hidden_unlock_title">Unlock Hidden Items</string>
+    <string name="hidden_unlock_subtitle">Verify passcode to show all system hidden files and folders.</string>
+    <string name="hidden_locked_title">Hidden Items are Locked</string>
+    <string name="hidden_locked_subtitle">Select to verify identity and reveal hidden storage materials.</string>
+
+    <!-- File row / menu -->
+    <string name="cd_locked_folder">Locked Secured Folder</string>
+    <string name="cd_shielded_folder">Shielded folder</string>
+    <string name="cd_menu_actions">Menu Actions</string>
+    <string name="menu_details">Details</string>
+    <string name="menu_remove_shield">Remove Secure Shield</string>
+    <string name="menu_lock_folder">Lock &amp; Secure this Folder</string>
+    <string name="menu_move_vault">Move to Biometric Vault</string>
+    <string name="menu_decompress">Decompress ZIP</string>
+    <string name="menu_compress">Compress folder/file to ZIP</string>
+    <string name="menu_delete">Delete File Item</string>
+
+    <!-- File details dialog -->
+    <string name="detail_type">Type</string>
+    <string name="detail_path">Path</string>
+    <string name="detail_size">Size</string>
+    <string name="detail_items">Items</string>
+    <string name="detail_modified">Modified</string>
+    <string name="detail_secured">Secured</string>
+    <string name="detail_folder">Folder</string>
+
+    <!-- Create folder / file / zip dialogs -->
+    <string name="dialog_create_folder_title">Create New Folder</string>
+    <string name="dialog_folder_name_label">Folder Name</string>
+    <string name="dialog_folder_name_placeholder">e.g. Invoices</string>
+    <string name="dialog_new_note_title">New Secure Notes</string>
+    <string name="dialog_filename_label">Filename (.txt)</string>
+    <string name="dialog_filename_placeholder">secret_keys</string>
+    <string name="dialog_note_content_label">Note content</string>
+    <string name="dialog_note_content_placeholder">Sensitive information details…</string>
+    <string name="dialog_compress_title">Compress to standard ZIP</string>
+    <string name="dialog_archive_name_label">Archive Name</string>
+
+    <!-- Auth / validation -->
+    <string name="unlock_folder_title">Unlock Secured Folder</string>
+    <string name="unlock_folder_subtitle">Please authenticate to view the shielded contents of \'%1$s\'</string>
+    <string name="confirm_move_title">Confirm Move Lock</string>
+    <string name="confirm_move_subtitle">Secure verification is enabled. Authenticate to move \'%1$s\' securely into the vault.</string>
+    <string name="confirm_delete_title">Confirm Deletion Lock</string>
+    <string name="confirm_delete_subtitle">Secure verification is enabled. Authenticate to delete \'%1$s\'</string>
+    <string name="auth_passcode_title">Security Passcode verification</string>
+    <string name="auth_enter_app_pin">Enter App PIN</string>
+    <string name="auth_incorrect_passcode">Incorrect passcode. Try again.</string>
+    <string name="auth_credentials_required_title">App Code Credentials Required</string>
+    <string name="auth_credentials_required_message">Please navigate to the Settings panel and configure a secure App PIN code. This acts as biometric fallback if device locks are missing.</string>
+
+    <!-- ===== Settings screen ===== -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Manage appearance, security &amp; app info</string>
+    <string name="settings_section_preferences">Preferences</string>
+    <string name="settings_section_help">Help &amp; Information</string>
+    <string name="settings_display_title">Display &amp; Themes</string>
+    <string name="settings_display_subtitle">Theme, appearance &amp; hidden files</string>
+    <string name="settings_security_title">Security Protection</string>
+    <string name="settings_security_subtitle">Passcode, app lock &amp; data protection</string>
+    <string name="settings_about_title">About Vault Files</string>
+    <string name="settings_about_subtitle">Author, build details &amp; app info</string>
+    <string name="help_compression_q">How compression works?</string>
+    <string name="help_compression_a">Tap on \'Compress to ZIP\' in file options. A standard compressed folder is synthesized beside the source, saving size. Decompress by clicking any .zip directly.</string>
+    <string name="help_securing_q">What is folder securing?</string>
+    <string name="help_securing_a">Adding secure shield status hides listings inside directories, demanding immediate face or fingerprint scan to expose folder files, fully safeguarding system notes.</string>
+
+    <string name="theme_title">Application Theme</string>
+    <string name="theme_subtitle_light">Forced Light theme</string>
+    <string name="theme_subtitle_dark">Forced Dark theme</string>
+    <string name="theme_subtitle_system">System Default dynamic colors</string>
+    <string name="theme_opt_system">System Default</string>
+    <string name="theme_opt_light">Light Mode</string>
+    <string name="theme_opt_dark">Dark Mode</string>
+    <string name="theme_name_system">System</string>
+    <string name="theme_name_light">Light</string>
+    <string name="theme_name_dark">Dark</string>
+
+    <string name="show_hidden_title">Show Hidden Files &amp; Folders</string>
+    <string name="show_hidden_subtitle">Reveal hidden entries starting with \".\" inside standard storage listings.</string>
+    <string name="hidden_verify_title">Hidden Items Verification</string>
+    <string name="hidden_verify_subtitle">Authentication is required to toggle hidden visibility status.</string>
+
+    <string name="app_passcode_title">App Passcode (PIN Fallback)</string>
+    <string name="app_passcode_none">None configured. Setup fallback PIN.</string>
+    <string name="app_passcode_active">Secure App PIN Active (Encrypted)</string>
+    <string name="protect_app_title">Password Protect Whole App</string>
+    <string name="protect_app_subtitle">Require passcode or biological layout scan upon launching the application.</string>
+    <string name="disable_app_lock_title">Disable App Lock</string>
+    <string name="disable_app_lock_subtitle">Verify passcode to disable application launch lock security.</string>
+    <string name="protect_hidden_title">Password Protect Hidden Items</string>
+    <string name="protect_hidden_subtitle">Demands passcode checks prior to exposing standard system hidden files.</string>
+    <string name="disable_hidden_lock_title">Disable Hidden Lock</string>
+    <string name="disable_hidden_lock_subtitle">Verify passcode to disable hidden items lock security.</string>
+    <string name="protect_delete_title">Password Protect Deletion &amp; Move</string>
+    <string name="protect_delete_subtitle">Require PIN or biometric confirmation when deleting items or moving them to vault.</string>
+    <string name="disable_actions_lock_title">Disable Actions Lock</string>
+    <string name="disable_actions_lock_subtitle">Verify passcode to allow file deletion and moving without system security verification.</string>
+
+    <string name="shielded_ledger_label">Shielded Folders Ledger</string>
+    <string name="shielded_empty_title">No folders have locks yet</string>
+    <string name="shielded_empty_subtitle">Lock directories from the File Manager context menu to see them listed here.</string>
+    <string name="cd_shield_icon">Shield icon</string>
+    <string name="cd_remove_shield">Remove Shield</string>
+
+    <string name="pin_setup_title">Setup Security App PIN</string>
+    <string name="pin_setup_message">This PIN serves as secure fallback credential lock if biometric scanner validation isn\'t available.</string>
+    <string name="pin_setup_enter_label">Enter Numeric PIN (4-6 digits)</string>
+    <string name="pin_setup_confirm_label">Confirm PIN</string>
+    <string name="pin_setup_error">PINs do not match or are empty.</string>
+
+    <string name="security_verification_title">Security Verification</string>
+    <string name="credentials_required_title">Credentials Required</string>
+    <string name="credentials_required_message">Please navigate to Settings and establish an App PIN. This provides secure verification fallback.</string>
+
+    <!-- ===== Secure vault screen ===== -->
+    <string name="vault_screen_title">Secure Vault</string>
+    <string name="cd_lock_vault">Lock Vault</string>
+    <string name="vault_empty_title">Your Secure Vault is Empty</string>
+    <string name="vault_empty_message">Move sensitive files from the File Manager tab to securely obfuscate them. They can only be accessed with biometric keys.</string>
+    <string name="vault_disclaimer">All files pictured below are isolated inside a restricted directory and masked securely. Lock the session before leaving the app.</string>
+    <string name="cd_lock">Lock</string>
+    <string name="vault_locked_title">Biometric Vault Locked</string>
+    <string name="vault_locked_message">Authentication required. Tap below to verify your identity and view files.</string>
+    <string name="vault_biometric_title">Vault Secure Access</string>
+    <string name="vault_biometric_subtitle">Provide biometric authorization to enter vault.</string>
+    <string name="vault_unlock_btn">Unlock Secure Vault</string>
+    <string name="vault_unlock_pin_alt">Or unlock with security PIN passcode</string>
+    <string name="vault_enter_pin_title">Enter Secure App PIN</string>
+    <string name="vault_pin_message">Authentication fallback. Enter your security PIN passcode code to access the locked vault.</string>
+    <string name="vault_app_code_label">App Code</string>
+    <string name="vault_pin_error">Incorrect password PIN</string>
+    <string name="cd_restore">Restore</string>
+    <string name="cd_delete_permanently">Delete permanently</string>
+
+    <!-- ===== ViewModel user messages ===== -->
+    <string name="msg_folder_created">Folder created successfully: %1$s</string>
+    <string name="msg_folder_create_failed">Failed to create folder. Name may already exist.</string>
+    <string name="msg_file_created">File created successfully: %1$s</string>
+    <string name="msg_file_create_failed">Failed to create file.</string>
+    <string name="msg_deleted">Deleted: %1$s</string>
+    <string name="msg_delete_failed">Could not delete %1$s</string>
+    <string name="msg_zip_success">Successfully zipped %1$s into %2$s</string>
+    <string name="msg_zip_failed">Failed to create zip archive.</string>
+    <string name="msg_extract_success">Successfully extracted contents of %1$s</string>
+    <string name="msg_extract_failed">Failed to extract zip archive.</string>
+    <string name="msg_shield_removed">Shield removed from: %1$s</string>
+    <string name="msg_folder_secured">Folder secured/shielded successfully: %1$s</string>
+    <string name="msg_moved_to_vault">Moved %1$s securely into the vault.</string>
+    <string name="msg_move_vault_failed">Could not move %1$s to vault. Ensure it is not a directory.</string>
+    <string name="msg_restored">Restored: %1$s inside \'Storage/Restored\' folder.</string>
+    <string name="msg_restore_failed">Failed to restore vaulted file.</string>
+    <string name="msg_vault_deleted">Permanently deleted %1$s from vault.</string>
+    <string name="msg_vault_delete_failed">Failed to delete vaulted file.</string>
+    <string name="msg_delete_lock_enabled">Delete and Move lock protection enabled</string>
+    <string name="msg_delete_lock_disabled">Delete and Move lock protection disabled</string>
+    <string name="msg_pin_updated">Security PIN passcode updated successfully.</string>
+    <string name="msg_theme_system">Theme changed to System</string>
+    <string name="msg_theme_light">Theme changed to Light</string>
+    <string name="msg_theme_dark">Theme changed to Dark</string>
+    <string name="msg_hidden_listed">Hidden files will be listed</string>
+    <string name="msg_hidden_hidden">Hidden files will be hidden</string>
+    <string name="msg_app_lock_enabled">App launch security lock enabled</string>
+    <string name="msg_app_lock_disabled">App launch security lock disabled</string>
+    <string name="msg_hidden_lock_enabled">Hidden files security lock enabled</string>
+    <string name="msg_hidden_lock_disabled">Hidden files security lock disabled</string>
+    <string name="msg_source_device">Switched storage source to Device Storage</string>
+    <string name="msg_source_sandbox">Switched storage source to App Sandbox</string>
+    <string name="msg_cannot_launch_settings_files">Could not launch system settings. Please grant files permission manually.</string>
+    <string name="msg_cannot_launch_settings">Could not launch settings. Please activate permission manually.</string>
+    <string name="msg_viewing_file">Viewing: %1$s (%2$s)</string>
+    <string name="msg_configure_pin_tab">Please configure security passcode PIN in settings tab.</string>
+    <string name="msg_configure_pin_settings">Please configure security passcode PIN in settings.</string>
+    <string name="msg_pin_required_protection">PIN configuration required before enabling protection.</string>
+    <string name="msg_setup_pin_fallback">Setup app security PIN in settings for fallback passcode.</string>
+    <string name="msg_vault_requires_pin">Vault lock requires a security PIN fallback setup. See settings.</string>
+
+    <!-- ===== Plurals ===== -->
+    <plurals name="folder_count">
+        <item quantity="one">%1$d folder</item>
+        <item quantity="other">%1$d folders</item>
+    </plurals>
+    <plurals name="item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+</resources>

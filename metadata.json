@@ -1,0 +1,6 @@
+{
+  "name": "Vault Files",
+  "description": "Secure file and storage manager with storage analysis, secure folder shielding, compression, and biometric vault.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

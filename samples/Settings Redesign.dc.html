@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+body{margin:0;}
+.scrn::-webkit-scrollbar{width:0;height:0;}
+.scrn{scrollbar-width:none;}
+</style>
+</helmet>
+<div style="width:max-content;min-width:100%;min-height:100vh;box-sizing:border-box;padding:48px;background:#e9e7ef;font-family:'Plus Jakarta Sans',sans-serif;">
+  <div style="margin-bottom:8px;font:800 26px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.02em;">Settings — Redesign</div>
+  <div style="margin-bottom:36px;font:500 14px 'Plus Jakarta Sans';color:#6E6B7B;max-width:700px;line-height:1.5;">A professional, sectioned Settings hub. Display &amp; Themes, Security Protection and About are now their own pages — tap a row to open it, tap the back arrow to return. Toggles are live. The Android status bar now keeps proper contrast in light mode. Shown light and dark; every frame is directly editable.</div>
+
+  <div style="display:flex;gap:44px;align-items:flex-start;">
+
+    <!-- ============================================================ LIGHT ============================================================ -->
+    <div style="flex:none;">
+      <div style="font:600 11px 'Plus Jakarta Sans';color:#8A8794;letter-spacing:.1em;text-transform:uppercase;margin-bottom:11px;">Light</div>
+      <div style="width:380px;height:820px;background:#F4F3F8;border-radius:46px;box-shadow:0 22px 60px rgba(28,27,40,.16);border:1px solid #E4E1EC;overflow:hidden;position:relative;display:flex;flex-direction:column;">
+
+        <!-- status bar (dark icons on light bar — the fix) -->
+        <div style="height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex:none;color:#1C1B22;">
+          <span style="font:700 13px 'Plus Jakarta Sans';">5:31</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5a10 10 0 0 1 15 0"/><path d="M4 8a6 6 0 0 1 9 0"/><circle cx="8.5" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>
+            <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+            <span style="font:700 11.5px 'Plus Jakarta Sans';">98%</span>
+            <svg width="23" height="11" viewBox="0 0 23 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14.5" height="7" rx="1.5" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+          </div>
+        </div>
+
+        <div class="scrn" style="flex:1;overflow-y:auto;overflow-x:hidden;">
+
+          <!-- ---------- LIGHT · SETTINGS ---------- -->
+          <sc-if value="{{ L_settings }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:12px 20px 4px;">
+              <div style="font:800 27px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.025em;">Settings</div>
+              <div style="font:500 13px 'Plus Jakarta Sans';color:#8E8B99;margin-top:3px;">Manage appearance, security &amp; app info</div>
+            </div>
+            <div style="padding:6px 16px 22px;">
+              <div style="font:700 11.5px 'Plus Jakarta Sans';color:#9A97A6;letter-spacing:.08em;text-transform:uppercase;margin:18px 6px 11px;">Preferences</div>
+              <div style="display:flex;flex-direction:column;gap:11px;">
+                <div onClick="{{ L_open_display }}" style="display:flex;align-items:center;gap:14px;padding:15px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);cursor:pointer;">
+                  <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h8M16 6h4"/><circle cx="14" cy="6" r="2.2"/><path d="M4 12h4M12 12h8"/><circle cx="10" cy="12" r="2.2"/><path d="M4 18h8M16 18h4"/><circle cx="14" cy="18" r="2.2"/></svg></div>
+                  <div style="flex:1;min-width:0;"><div style="font:700 15px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.01em;">Display &amp; Themes</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:2px;">Theme, appearance &amp; hidden files</div></div>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C3BFD0" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                </div>
+                <div onClick="{{ L_open_security }}" style="display:flex;align-items:center;gap:14px;padding:15px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);cursor:pointer;">
+                  <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9.2 12l1.9 1.9 3.7-3.8"/></svg></div>
+                  <div style="flex:1;min-width:0;"><div style="font:700 15px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.01em;">Security Protection</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:2px;">Passcode, app lock &amp; data protection</div></div>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C3BFD0" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                </div>
+              </div>
+
+              <div style="font:700 11.5px 'Plus Jakarta Sans';color:#9A97A6;letter-spacing:.08em;text-transform:uppercase;margin:24px 6px 11px;">Help &amp; Information</div>
+              <div style="background:#FFFFFF;border:1px solid #E9E5F1;border-radius:18px;padding:2px 16px;box-shadow:0 2px 10px rgba(28,27,40,.05);margin-bottom:11px;">
+                <div style="padding:14px 0;">
+                  <div style="font:700 13.5px 'Plus Jakarta Sans';color:#1C1B22;">How compression works?</div>
+                  <div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:5px;line-height:1.55;">Tap “Compress to ZIP” in a folder's options. A compressed copy is created beside the source to save space. Decompress by opening any .zip directly.</div>
+                </div>
+                <div style="height:1px;background:#ECEAF1;"></div>
+                <div style="padding:14px 0;">
+                  <div style="font:700 13.5px 'Plus Jakarta Sans';color:#1C1B22;">What is folder securing?</div>
+                  <div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:5px;line-height:1.55;">Securing a folder hides its listing and demands face or fingerprint to reveal it, fully safeguarding the files inside.</div>
+                </div>
+              </div>
+              <div onClick="{{ L_open_about }}" style="display:flex;align-items:center;gap:14px;padding:15px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);cursor:pointer;">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.6" r="1.1" fill="#6A5FE0" stroke="none"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 15px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.01em;">About Vault Files</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:2px;">Author, build details &amp; app info</div></div>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C3BFD0" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ---------- LIGHT · DISPLAY ---------- -->
+          <sc-if value="{{ L_display }}">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 18px 14px;">
+              <div onClick="{{ L_back }}" style="width:38px;height:38px;border-radius:12px;background:#FFFFFF;border:1px solid #E9E5F1;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <span style="font:700 19px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.015em;white-space:nowrap;">Display &amp; Themes</span>
+            </div>
+            <div style="padding:4px 16px 22px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.4 4.4l1.5 1.5M18.1 18.1l1.5 1.5M2.5 12h2.2M19.3 12h2.2M4.4 19.6l1.5-1.5M18.1 5.9l1.5-1.5"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;">Application Theme</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:2px;">Forced Light theme</div></div>
+                <div style="padding:9px 18px;border-radius:12px;background:#6A5FE0;color:#FFFFFF;font:700 12.5px 'Plus Jakarta Sans';cursor:pointer;box-shadow:0 6px 14px rgba(106,95,224,.3);">Change</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;">Show Hidden Files &amp; Folders</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:2px;line-height:1.5;">Reveal entries starting with “.” inside storage listings.</div></div>
+                <div onClick="{{ tg_hidden_l }}" style="{{ tg_hidden_l_track }}"><div style="{{ tg_hidden_l_knob }}"></div></div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ---------- LIGHT · SECURITY ---------- -->
+          <sc-if value="{{ L_security }}">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 18px 14px;">
+              <div onClick="{{ L_back }}" style="width:38px;height:38px;border-radius:12px;background:#FFFFFF;border:1px solid #E9E5F1;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <span style="font:700 19px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.015em;white-space:nowrap;">Security Protection</span>
+            </div>
+            <div style="padding:4px 16px 22px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4L7.5 20M16.5 4l-2 16M4 9h16M3 15h16"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;">App Passcode (PIN Fallback)</div><div style="font:600 12px 'Plus Jakarta Sans';color:#E0533D;margin-top:3px;line-height:1.4;">None configured. Set up a fallback PIN.</div></div>
+                <div style="padding:9px 18px;border-radius:12px;background:#6A5FE0;color:#FFFFFF;font:700 12.5px 'Plus Jakarta Sans';cursor:pointer;box-shadow:0 6px 14px rgba(106,95,224,.3);">Setup</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="4"/><path d="M11 12l8 8M16 17l2-2M18 19l2-2"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;">Password Protect Whole App</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:2px;line-height:1.5;">Require passcode or biometrics when launching the app.</div></div>
+                <div onClick="{{ tg_whole_l }}" style="{{ tg_whole_l_track }}"><div style="{{ tg_whole_l_knob }}"></div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.5A9 9 0 0 1 12 4.3c6.5 0 10 7 10 7a13.4 13.4 0 0 1-1.7 2.5M6.6 6.6A13.3 13.3 0 0 0 2 11.3s3.5 7 10 7a9.7 9.7 0 0 0 4.4-1M14 13.5a3 3 0 0 1-4.2-4.2"/><path d="M2 2l20 20"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;">Password Protect Hidden Items</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:2px;line-height:1.5;">Demand a passcode before exposing hidden system files.</div></div>
+                <div onClick="{{ tg_items_l }}" style="{{ tg_items_l_track }}"><div style="{{ tg_items_l_knob }}"></div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;">Password Protect Deletion &amp; Move</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:2px;line-height:1.5;">Require confirmation before deleting or moving to vault.</div></div>
+                <div onClick="{{ tg_del_l }}" style="{{ tg_del_l_track }}"><div style="{{ tg_del_l_knob }}"></div></div>
+              </div>
+
+              <div style="font:700 11.5px 'Plus Jakarta Sans';color:#9A97A6;letter-spacing:.08em;text-transform:uppercase;margin:14px 6px 2px;">Shielded Folders Ledger</div>
+              <div style="padding:16px;border-radius:18px;background:#F0EEFA;border:1px dashed #CFC6F0;">
+                <div style="font:600 13px 'Plus Jakarta Sans';color:#6A5FE0;">No folders have locks yet</div>
+                <div style="font:500 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:4px;line-height:1.5;">Lock directories from the File Manager context menu to see them listed here.</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ---------- LIGHT · ABOUT ---------- -->
+          <sc-if value="{{ L_about }}">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 18px 14px;">
+              <div onClick="{{ L_back }}" style="width:38px;height:38px;border-radius:12px;background:#FFFFFF;border:1px solid #E9E5F1;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1B22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <span style="font:700 19px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.015em;white-space:nowrap;">About</span>
+            </div>
+            <div style="padding:6px 20px 22px;">
+              <div style="font:800 25px 'Plus Jakarta Sans';color:#1C1B22;letter-spacing:-.025em;">Vault Files</div>
+              <div style="font:600 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:3px;">Version 7.2</div>
+              <div style="font:700 11.5px 'Plus Jakarta Sans';color:#9A97A6;letter-spacing:.08em;text-transform:uppercase;margin:24px 0 12px;">Build Information</div>
+              <div style="display:flex;flex-direction:column;gap:11px;">
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                  <div style="width:40px;height:40px;flex:none;border-radius:12px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg></div>
+                  <div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A97A6;letter-spacing:.02em;">Author</div><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;margin-top:1px;">Sreeraj P</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                  <div style="width:40px;height:40px;flex:none;border-radius:12px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg></div>
+                  <div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A97A6;letter-spacing:.02em;">IDE Used</div><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;margin-top:1px;">Android Studio, Visual Studio Code</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                  <div style="width:40px;height:40px;flex:none;border-radius:12px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="11" rx="3"/><circle cx="9.5" cy="13" r="1.1" fill="#6A5FE0" stroke="none"/><circle cx="14.5" cy="13" r="1.1" fill="#6A5FE0" stroke="none"/><path d="M12 4.5v3.5"/><circle cx="12" cy="3.5" r="1.2"/><path d="M2.5 12.5v3M21.5 12.5v3"/></svg></div>
+                  <div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A97A6;letter-spacing:.02em;">AI Used Version</div><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;margin-top:1px;">Claude Opus 4.8</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#FFFFFF;border:1px solid #E9E5F1;box-shadow:0 2px 10px rgba(28,27,40,.05);">
+                  <div style="width:40px;height:40px;flex:none;border-radius:12px;background:#F0EEFA;display:flex;align-items:center;justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#6A5FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.6 6.3a3.8 3.8 0 0 0-5.1 5.1L4 17l3 3 5.6-5.5a3.8 3.8 0 0 0 5.1-5.1l-2.2 2.2-2-2 2.1-2.3z"/></svg></div>
+                  <div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A97A6;letter-spacing:.02em;">Last Build Date</div><div style="font:700 14.5px 'Plus Jakarta Sans';color:#1C1B22;margin-top:1px;">2026-06-21 17:27</div></div>
+                </div>
+              </div>
+              <div style="text-align:center;font:600 12.5px 'Plus Jakarta Sans';color:#8E8B99;margin-top:26px;">Made with <span style="color:#E0533D;">&#10084;</span> from India</div>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <!-- tab bar -->
+        <div style="flex:none;border-top:1px solid #ECEAF1;background:#FFFFFF;display:flex;align-items:center;justify-content:space-around;padding:9px 8px 6px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;color:#6B687A;"><div style="padding:5px 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div><span style="font:600 10px 'Plus Jakarta Sans';">Storage</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;color:#6B687A;"><div style="padding:5px 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><span style="font:600 10px 'Plus Jakarta Sans';">Files</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;color:#6B687A;"><div style="padding:5px 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="4"/><path d="M11 12l8 8M16 17l2-2M18 19l2-2"/></svg></div><span style="font:600 10px 'Plus Jakarta Sans';">Vault</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;color:#6A5FE0;"><div style="padding:5px 18px;border-radius:14px;background:#ECE9FB;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8h8M18 8h2M4 16h2M12 16h8"/><circle cx="14" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/></svg></div><span style="font:700 10px 'Plus Jakarta Sans';">Settings</span></div>
+        </div>
+        <div style="height:5px;width:120px;border-radius:3px;background:#1C1B22;opacity:.18;margin:7px auto 9px;flex:none;"></div>
+      </div>
+    </div>
+
+    <!-- ============================================================ DARK ============================================================ -->
+    <div style="flex:none;">
+      <div style="font:600 11px 'Plus Jakarta Sans';color:#8A8794;letter-spacing:.1em;text-transform:uppercase;margin-bottom:11px;">Dark</div>
+      <div style="width:380px;height:820px;background:#0F0F14;border-radius:46px;box-shadow:0 22px 60px rgba(0,0,0,.4);border:1px solid #26262E;overflow:hidden;position:relative;display:flex;flex-direction:column;">
+
+        <div style="height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex:none;color:#F2F1F6;">
+          <span style="font:700 13px 'Plus Jakarta Sans';">5:31</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5a10 10 0 0 1 15 0"/><path d="M4 8a6 6 0 0 1 9 0"/><circle cx="8.5" cy="10.5" r=".6" fill="currentColor" stroke="none"/></svg>
+            <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+            <span style="font:700 11.5px 'Plus Jakarta Sans';">98%</span>
+            <svg width="23" height="11" viewBox="0 0 23 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14.5" height="7" rx="1.5" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".75" fill="currentColor"/></svg>
+          </div>
+        </div>
+
+        <div class="scrn" style="flex:1;overflow-y:auto;overflow-x:hidden;">
+
+          <!-- ---------- DARK · SETTINGS ---------- -->
+          <sc-if value="{{ D_settings }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:12px 20px 4px;">
+              <div style="font:800 27px 'Plus Jakarta Sans';color:#F2F1F6;letter-spacing:-.025em;">Settings</div>
+              <div style="font:500 13px 'Plus Jakarta Sans';color:#908D9C;margin-top:3px;">Manage appearance, security &amp; app info</div>
+            </div>
+            <div style="padding:6px 16px 22px;">
+              <div style="font:700 11.5px 'Plus Jakarta Sans';color:#7C7989;letter-spacing:.08em;text-transform:uppercase;margin:18px 6px 11px;">Preferences</div>
+              <div style="display:flex;flex-direction:column;gap:11px;">
+                <div onClick="{{ D_open_display }}" style="display:flex;align-items:center;gap:14px;padding:15px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);cursor:pointer;">
+                  <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h8M16 6h4"/><circle cx="14" cy="6" r="2.2"/><path d="M4 12h4M12 12h8"/><circle cx="10" cy="12" r="2.2"/><path d="M4 18h8M16 18h4"/><circle cx="14" cy="18" r="2.2"/></svg></div>
+                  <div style="flex:1;min-width:0;"><div style="font:700 15px 'Plus Jakarta Sans';color:#F2F1F6;letter-spacing:-.01em;">Display &amp; Themes</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:2px;">Theme, appearance &amp; hidden files</div></div>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#56535F" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                </div>
+                <div onClick="{{ D_open_security }}" style="display:flex;align-items:center;gap:14px;padding:15px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);cursor:pointer;">
+                  <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9.2 12l1.9 1.9 3.7-3.8"/></svg></div>
+                  <div style="flex:1;min-width:0;"><div style="font:700 15px 'Plus Jakarta Sans';color:#F2F1F6;letter-spacing:-.01em;">Security Protection</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:2px;">Passcode, app lock &amp; data protection</div></div>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#56535F" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                </div>
+              </div>
+
+              <div style="font:700 11.5px 'Plus Jakarta Sans';color:#7C7989;letter-spacing:.08em;text-transform:uppercase;margin:24px 6px 11px;">Help &amp; Information</div>
+              <div style="background:#18181F;border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:2px 16px;margin-bottom:11px;">
+                <div style="padding:14px 0;">
+                  <div style="font:700 13.5px 'Plus Jakarta Sans';color:#F2F1F6;">How compression works?</div>
+                  <div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:5px;line-height:1.55;">Tap “Compress to ZIP” in a folder's options. A compressed copy is created beside the source to save space. Decompress by opening any .zip directly.</div>
+                </div>
+                <div style="height:1px;background:rgba(255,255,255,.06);"></div>
+                <div style="padding:14px 0;">
+                  <div style="font:700 13.5px 'Plus Jakarta Sans';color:#F2F1F6;">What is folder securing?</div>
+                  <div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:5px;line-height:1.55;">Securing a folder hides its listing and demands face or fingerprint to reveal it, fully safeguarding the files inside.</div>
+                </div>
+              </div>
+              <div onClick="{{ D_open_about }}" style="display:flex;align-items:center;gap:14px;padding:15px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);cursor:pointer;">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.6" r="1.1" fill="#B9AEFF" stroke="none"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 15px 'Plus Jakarta Sans';color:#F2F1F6;letter-spacing:-.01em;">About Vault Files</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:2px;">Author, build details &amp; app info</div></div>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#56535F" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ---------- DARK · DISPLAY ---------- -->
+          <sc-if value="{{ D_display }}">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 18px 14px;">
+              <div onClick="{{ D_back }}" style="width:38px;height:38px;border-radius:12px;background:#18181F;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F2F1F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <span style="font:700 19px 'Plus Jakarta Sans';color:#F2F1F6;letter-spacing:-.015em;white-space:nowrap;">Display &amp; Themes</span>
+            </div>
+            <div style="padding:4px 16px 22px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;">Application Theme</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:2px;">Forced Dark theme</div></div>
+                <div style="padding:9px 18px;border-radius:12px;background:rgba(124,111,240,.22);color:#B9AEFF;font:700 12.5px 'Plus Jakarta Sans';cursor:pointer;">Change</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;">Show Hidden Files &amp; Folders</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:2px;line-height:1.5;">Reveal entries starting with “.” inside storage listings.</div></div>
+                <div onClick="{{ tg_hidden_d }}" style="{{ tg_hidden_d_track }}"><div style="{{ tg_hidden_d_knob }}"></div></div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ---------- DARK · SECURITY ---------- -->
+          <sc-if value="{{ D_security }}">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 18px 14px;">
+              <div onClick="{{ D_back }}" style="width:38px;height:38px;border-radius:12px;background:#18181F;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F2F1F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <span style="font:700 19px 'Plus Jakarta Sans';color:#F2F1F6;letter-spacing:-.015em;white-space:nowrap;">Security Protection</span>
+            </div>
+            <div style="padding:4px 16px 22px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4L7.5 20M16.5 4l-2 16M4 9h16M3 15h16"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;">App Passcode (PIN Fallback)</div><div style="font:600 12px 'Plus Jakarta Sans';color:#F0846F;margin-top:3px;line-height:1.4;">None configured. Set up a fallback PIN.</div></div>
+                <div style="padding:9px 18px;border-radius:12px;background:rgba(124,111,240,.22);color:#B9AEFF;font:700 12.5px 'Plus Jakarta Sans';cursor:pointer;">Setup</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="4"/><path d="M11 12l8 8M16 17l2-2M18 19l2-2"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;">Password Protect Whole App</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:2px;line-height:1.5;">Require passcode or biometrics when launching the app.</div></div>
+                <div onClick="{{ tg_whole_d }}" style="{{ tg_whole_d_track }}"><div style="{{ tg_whole_d_knob }}"></div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.5A9 9 0 0 1 12 4.3c6.5 0 10 7 10 7a13.4 13.4 0 0 1-1.7 2.5M6.6 6.6A13.3 13.3 0 0 0 2 11.3s3.5 7 10 7a9.7 9.7 0 0 0 4.4-1M14 13.5a3 3 0 0 1-4.2-4.2"/><path d="M2 2l20 20"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;">Password Protect Hidden Items</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:2px;line-height:1.5;">Demand a passcode before exposing hidden system files.</div></div>
+                <div onClick="{{ tg_items_d }}" style="{{ tg_items_d_track }}"><div style="{{ tg_items_d_knob }}"></div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                <div style="width:42px;height:42px;flex:none;border-radius:13px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;">Password Protect Deletion &amp; Move</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:2px;line-height:1.5;">Require confirmation before deleting or moving to vault.</div></div>
+                <div onClick="{{ tg_del_d }}" style="{{ tg_del_d_track }}"><div style="{{ tg_del_d_knob }}"></div></div>
+              </div>
+
+              <div style="font:700 11.5px 'Plus Jakarta Sans';color:#7C7989;letter-spacing:.08em;text-transform:uppercase;margin:14px 6px 2px;">Shielded Folders Ledger</div>
+              <div style="padding:16px;border-radius:18px;background:rgba(124,111,240,.10);border:1px dashed rgba(124,111,240,.4);">
+                <div style="font:600 13px 'Plus Jakarta Sans';color:#B9AEFF;">No folders have locks yet</div>
+                <div style="font:500 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:4px;line-height:1.5;">Lock directories from the File Manager context menu to see them listed here.</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ---------- DARK · ABOUT ---------- -->
+          <sc-if value="{{ D_about }}">
+            <div style="display:flex;align-items:center;gap:13px;padding:14px 18px 14px;">
+              <div onClick="{{ D_back }}" style="width:38px;height:38px;border-radius:12px;background:#18181F;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F2F1F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+              <span style="font:700 19px 'Plus Jakarta Sans';color:#F2F1F6;letter-spacing:-.015em;white-space:nowrap;">About</span>
+            </div>
+            <div style="padding:6px 20px 22px;">
+              <div style="font:800 25px 'Plus Jakarta Sans';color:#F2F1F6;letter-spacing:-.025em;">Vault Files</div>
+              <div style="font:600 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:3px;">Version 7.2</div>
+              <div style="font:700 11.5px 'Plus Jakarta Sans';color:#7C7989;letter-spacing:.08em;text-transform:uppercase;margin:24px 0 12px;">Build Information</div>
+              <div style="display:flex;flex-direction:column;gap:11px;">
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                  <div style="width:40px;height:40px;flex:none;border-radius:12px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg></div>
+                  <div><div style="font:600 11px 'Plus Jakarta Sans';color:#7C7989;letter-spacing:.02em;">Author</div><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;margin-top:1px;">Sreeraj P</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                  <div style="width:40px;height:40px;flex:none;border-radius:12px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg></div>
+                  <div><div style="font:600 11px 'Plus Jakarta Sans';color:#7C7989;letter-spacing:.02em;">IDE Used</div><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;margin-top:1px;">Android Studio, Visual Studio Code</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                  <div style="width:40px;height:40px;flex:none;border-radius:12px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="11" rx="3"/><circle cx="9.5" cy="13" r="1.1" fill="#B9AEFF" stroke="none"/><circle cx="14.5" cy="13" r="1.1" fill="#B9AEFF" stroke="none"/><path d="M12 4.5v3.5"/><circle cx="12" cy="3.5" r="1.2"/><path d="M2.5 12.5v3M21.5 12.5v3"/></svg></div>
+                  <div><div style="font:600 11px 'Plus Jakarta Sans';color:#7C7989;letter-spacing:.02em;">AI Used Version</div><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;margin-top:1px;">Claude Opus 4.8</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#18181F;border:1px solid rgba(255,255,255,.06);">
+                  <div style="width:40px;height:40px;flex:none;border-radius:12px;background:rgba(124,111,240,.16);display:flex;align-items:center;justify-content:center;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#B9AEFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.6 6.3a3.8 3.8 0 0 0-5.1 5.1L4 17l3 3 5.6-5.5a3.8 3.8 0 0 0 5.1-5.1l-2.2 2.2-2-2 2.1-2.3z"/></svg></div>
+                  <div><div style="font:600 11px 'Plus Jakarta Sans';color:#7C7989;letter-spacing:.02em;">Last Build Date</div><div style="font:700 14.5px 'Plus Jakarta Sans';color:#F2F1F6;margin-top:1px;">2026-06-21 17:27</div></div>
+                </div>
+              </div>
+              <div style="text-align:center;font:600 12.5px 'Plus Jakarta Sans';color:#908D9C;margin-top:26px;">Made with <span style="color:#F0846F;">&#10084;</span> from India</div>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <div style="flex:none;border-top:1px solid rgba(255,255,255,.06);background:#18181F;display:flex;align-items:center;justify-content:space-around;padding:9px 8px 6px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;color:#A4A1B0;"><div style="padding:5px 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div><span style="font:600 10px 'Plus Jakarta Sans';">Storage</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;color:#A4A1B0;"><div style="padding:5px 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><span style="font:600 10px 'Plus Jakarta Sans';">Files</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;color:#A4A1B0;"><div style="padding:5px 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="4"/><path d="M11 12l8 8M16 17l2-2M18 19l2-2"/></svg></div><span style="font:600 10px 'Plus Jakarta Sans';">Vault</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;color:#B9AEFF;"><div style="padding:5px 18px;border-radius:14px;background:rgba(124,111,240,.20);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8h8M18 8h2M4 16h2M12 16h8"/><circle cx="14" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/></svg></div><span style="font:700 10px 'Plus Jakarta Sans';">Settings</span></div>
+        </div>
+        <div style="height:5px;width:120px;border-radius:3px;background:#F2F1F6;opacity:.22;margin:7px auto 9px;flex:none;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    light: 'settings', dark: 'settings',
+    hidden_l: false, whole_l: false, items_l: false, del_l: true,
+    hidden_d: false, whole_d: false, items_d: false, del_d: true,
+  };
+
+  togStyle(on, dark) {
+    const onColor = dark ? '#7C6FF0' : '#6A5FE0';
+    const offColor = dark ? '#34343E' : '#D9D5E6';
+    return {
+      track: { width: '46px', height: '27px', borderRadius: '999px', background: on ? onColor : offColor, position: 'relative', flex: 'none', transition: 'background .22s ease', cursor: 'pointer' },
+      knob: { width: '21px', height: '21px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', left: '3px', transition: 'transform .22s ease', transform: on ? 'translateX(19px)' : 'translateX(0)', boxShadow: '0 1px 3px rgba(0,0,0,.28)' },
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const nav = (k, v) => () => this.setState({ [k]: v });
+    const out = {
+      L_settings: s.light === 'settings', L_display: s.light === 'display', L_security: s.light === 'security', L_about: s.light === 'about',
+      D_settings: s.dark === 'settings', D_display: s.dark === 'display', D_security: s.dark === 'security', D_about: s.dark === 'about',
+      L_open_display: nav('light', 'display'), L_open_security: nav('light', 'security'), L_open_about: nav('light', 'about'), L_back: nav('light', 'settings'),
+      D_open_display: nav('dark', 'display'), D_open_security: nav('dark', 'security'), D_open_about: nav('dark', 'about'), D_back: nav('dark', 'settings'),
+    };
+    ['hidden_l', 'whole_l', 'items_l', 'del_l', 'hidden_d', 'whole_d', 'items_d', 'del_d'].forEach((k) => {
+      const dark = k.endsWith('_d');
+      const st = this.togStyle(s[k], dark);
+      out['tg_' + k + '_track'] = st.track;
+      out['tg_' + k + '_knob'] = st.knob;
+      out['tg_' + k] = () => this.setState((p) => ({ [k]: !p[k] }));
+    });
+    return out;
+  }
+}
+</script>
+</body>
+</html>

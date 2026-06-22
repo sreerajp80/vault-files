@@ -1,0 +1,308 @@
+<resources>
+    <string name="app_name">Vault Files</string>
+
+    <!-- ===== Bottom navigation ===== -->
+    <string name="nav_storage">സ്റ്റോറേജ്</string>
+    <string name="nav_files">ഫയലുകൾ</string>
+    <string name="nav_vault">വോൾട്ട്</string>
+    <string name="nav_settings">ക്രമീകരണങ്ങൾ</string>
+    <string name="cd_storage_stats">സ്റ്റോറേജ് സ്ഥിതിവിവരം</string>
+    <string name="cd_file_explorer">ഫയൽ എക്സ്പ്ലോറർ</string>
+    <string name="cd_secure_vault">സുരക്ഷിത വോൾട്ട്</string>
+    <string name="cd_settings_options">ക്രമീകരണ ഓപ്ഷനുകൾ</string>
+
+    <!-- ===== Common actions ===== -->
+    <string name="action_create">സൃഷ്ടിക്കുക</string>
+    <string name="action_cancel">റദ്ദാക്കുക</string>
+    <string name="action_close">അടയ്ക്കുക</string>
+    <string name="action_verify">പരിശോധിക്കുക</string>
+    <string name="action_compress">കംപ്രസ് ചെയ്യുക</string>
+    <string name="action_save_file">ഫയൽ സംരക്ഷിക്കുക</string>
+    <string name="action_ok">ശരി</string>
+    <string name="action_ok_understand">ശരി, മനസ്സിലായി</string>
+    <string name="action_change">മാറ്റുക</string>
+    <string name="action_setup">സജ്ജമാക്കുക</string>
+    <string name="action_modify">പരിഷ്കരിക്കുക</string>
+    <string name="action_save_pin">പിൻ സംരക്ഷിക്കുക</string>
+    <string name="action_decrypt">ഡീക്രിപ്റ്റ് ചെയ്യുക</string>
+    <string name="common_yes">അതെ</string>
+    <string name="common_no">അല്ല</string>
+    <string name="cd_back">പിന്നോട്ട്</string>
+
+    <!-- ===== App lock screen ===== -->
+    <string name="applock_biometric_title">ആപ്പ് ലോക്ക് ചെയ്തു</string>
+    <string name="applock_biometric_subtitle">സുരക്ഷിത സ്റ്റോറേജ് ആപ്ലിക്കേഷൻ അൺലോക്ക് ചെയ്യാൻ പ്രാമാണീകരിക്കുക</string>
+    <string name="applock_biometric_subtitle_short">അൺലോക്ക് ചെയ്യാൻ പ്രാമാണീകരിക്കുക</string>
+    <string name="cd_app_locked_shield">ആപ്പ് ലോക്ക് ഷീൽഡ്</string>
+    <string name="applock_title">ആപ്ലിക്കേഷൻ ലോക്ക് ചെയ്തു</string>
+    <string name="applock_message">ഈ ആപ്ലിക്കേഷൻ എൻക്രിപ്റ്റ് ചെയ്തതും പാസ്‌കോഡ് സംരക്ഷിതവുമാണ്. അൺലോക്ക് ചെയ്യാൻ നിങ്ങളുടെ സുരക്ഷിത പിൻ നൽകുക അല്ലെങ്കിൽ ബയോമെട്രിക്സ് ഉപയോഗിച്ച് പ്രാമാണീകരിക്കുക.</string>
+    <string name="applock_pin_label">ആപ്പ് പിൻ</string>
+    <string name="applock_pin_error">തെറ്റായ പാസ്‌കോഡ് പിൻ. ദയവായി വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="cd_unlock_biometrics">ബയോമെട്രിക്സ് ഉപയോഗിച്ച് അൺലോക്ക് ചെയ്യുക</string>
+    <string name="applock_unlock_btn">ആപ്പ് അൺലോക്ക് ചെയ്യുക</string>
+
+    <!-- ===== About screen ===== -->
+    <string name="about_title">കുറിച്ച്</string>
+    <string name="about_version">പതിപ്പ് %1$s</string>
+    <string name="about_build_info">ബിൽഡ് വിവരങ്ങൾ</string>
+    <string name="about_author">രചയിതാവ്</string>
+    <string name="about_ide_used">ഉപയോഗിച്ച IDE</string>
+    <string name="about_ai_version">ഉപയോഗിച്ച AI പതിപ്പ്</string>
+    <string name="about_last_build_date">അവസാന ബിൽഡ് തീയതി</string>
+    <string name="about_made_with">സ്നേഹത്തോടെ നിർമ്മിച്ചത് </string>
+    <string name="about_from_india"> ഇന്ത്യയിൽ നിന്ന്</string>
+    <string name="cd_love">സ്നേഹം</string>
+
+    <!-- ===== Storage analyzer screen ===== -->
+    <string name="storage_analysis_title">സ്റ്റോറേജ് വിശകലനം</string>
+    <string name="storage_scope_device">മുഴുവൻ ഉപകരണം</string>
+    <string name="storage_scope_sandbox">ആപ്പ് സാൻഡ്‌ബോക്സ്</string>
+    <string name="source_app_sandbox">ആപ്പ് സാൻഡ്‌ബോക്സ്</string>
+    <string name="source_entire_device">മുഴുവൻ ഉപകരണം</string>
+    <string name="perm_all_files_title">എല്ലാ ഫയലുകളിലേക്കും ആക്സസ് ആവശ്യമാണ്</string>
+    <string name="perm_all_files_message">ഈ ഉപകരണത്തിലെ എല്ലാ ഫോൾഡറുകളും ഫയലുകളും സ്കാൻ ചെയ്യാൻ, ആപ്ലിക്കേഷന് \'എല്ലാ ഫയൽ ആക്സസും\' അനുമതി ആവശ്യമാണ്. നിങ്ങളുടെ സുരക്ഷയും വ്യക്തിഗത സ്വകാര്യതയും പൂർണമായി മാനിക്കപ്പെടുന്നു.</string>
+    <string name="perm_grant_storage_access">സ്റ്റോറേജ് ആക്സസ് അനുവദിക്കുക</string>
+    <string name="cd_permission_required">അനുമതി ആവശ്യമാണ്</string>
+    <string name="storage_breakdown">സ്റ്റോറേജ് വിശദാംശം</string>
+    <string name="storage_see_all">എല്ലാം കാണുക</string>
+    <string name="storage_percent_used">%1$d%% ഉപയോഗിച്ചു</string>
+    <string name="storage_free_of">%2$s-ൽ %1$s ഒഴിവുണ്ട്</string>
+    <string name="vault_files_count_label">വോൾട്ടിലെ ഫയലുകൾ</string>
+    <string name="vault_encrypted_label">%1$s എൻക്രിപ്റ്റ് ചെയ്തു</string>
+    <string name="vault_open">വോൾട്ട് തുറക്കുക</string>
+    <string name="cat_images">ചിത്രങ്ങൾ</string>
+    <string name="cat_videos">വീഡിയോകൾ</string>
+    <string name="cat_audio_tracks">ഓഡിയോ ട്രാക്കുകൾ</string>
+    <string name="cat_documents">പ്രമാണങ്ങൾ</string>
+    <string name="cat_archives">ആർക്കൈവുകൾ</string>
+    <string name="cat_other_formats">മറ്റ് ഫോർമാറ്റുകൾ</string>
+
+    <!-- ===== File explorer screen ===== -->
+    <string name="sort_name">പേര്</string>
+    <string name="sort_size">വലുപ്പം</string>
+    <string name="sort_date">തീയതി</string>
+    <string name="sort_by">%1$s അനുസരിച്ച് അടുക്കുക</string>
+    <string name="cd_sort">അടുക്കുക</string>
+    <string name="files_filter_chip">%1$s · %2$d</string>
+    <string name="cd_clear_filter">ഫിൽട്ടർ മായ്ക്കുക</string>
+    <string name="cd_navigate_up">മുകളിലേക്ക്</string>
+    <string name="files_breadcrumb_summary">%1$s · %2$s</string>
+    <string name="cd_new_folder">പുതിയ ഫോൾഡർ</string>
+    <string name="cd_new_text_file">പുതിയ ടെക്സ്റ്റ് ഫയൽ</string>
+    <string name="files_search_placeholder">ഫയലുകളും ഫോൾഡറുകളും തിരയുക</string>
+    <string name="cd_clear_search">തിരയൽ മായ്ക്കുക</string>
+    <string name="files_all_category_header">എല്ലാ %1$s</string>
+    <string name="files_all_items">എല്ലാ ഇനങ്ങളും</string>
+    <string name="files_scanning_category">%1$s സ്കാൻ ചെയ്യുന്നു…</string>
+    <string name="files_no_matching">പൊരുത്തപ്പെടുന്ന ഇനങ്ങളില്ല</string>
+    <string name="files_no_category_found">%1$s ഒന്നും കണ്ടെത്തിയില്ല</string>
+    <string name="files_empty_folder">ഈ ഫോൾഡർ ശൂന്യമാണ്</string>
+    <string name="files_no_match_detail">\"%1$s\" എന്നതുമായി ഒന്നും പൊരുത്തപ്പെടുന്നില്ല. മറ്റൊരു തിരയൽ പരീക്ഷിക്കുക.</string>
+    <string name="files_no_category_detail">നിലവിലെ സ്റ്റോറേജ് സ്രോതസ്സിൽ ഈ തരത്തിലുള്ള ഫയലുകളൊന്നുമില്ല.</string>
+    <string name="files_empty_folder_detail">ഹെഡറിലെ ബട്ടണുകൾ ഉപയോഗിച്ച് പുതിയ ഫോൾഡറുകൾ സൃഷ്ടിക്കുക അല്ലെങ്കിൽ ടെക്സ്റ്റ് ഫയലുകൾ എഴുതുക.</string>
+    <string name="cd_empty_folder">ശൂന്യമായ ഫോൾഡർ</string>
+    <string name="perm_device_access_title">ഉപകരണ സ്റ്റോറേജ് ആക്സസ് ആവശ്യമാണ്</string>
+    <string name="perm_device_access_message">ഈ ഉപകരണത്തിന്റെ സ്റ്റോറേജിലെ ഫയലുകൾ/ഫോൾഡറുകൾ ബ്രൗസ് ചെയ്യാനും പരിശോധിക്കാനും, ആൻഡ്രോയിഡ് സിസ്റ്റം ക്രമീകരണങ്ങളിൽ \'എല്ലാ ഫയൽ ആക്സസും\' സ്വമേധയാ അനുവദിക്കണം.</string>
+    <string name="perm_open_storage_settings">സ്റ്റോറേജ് ക്രമീകരണങ്ങൾ തുറക്കുക</string>
+
+    <!-- Category filter display labels -->
+    <string name="filter_label_images">ചിത്രങ്ങൾ</string>
+    <string name="filter_label_videos">വീഡിയോകൾ</string>
+    <string name="filter_label_audio">ഓഡിയോ</string>
+    <string name="filter_label_documents">പ്രമാണങ്ങൾ</string>
+    <string name="filter_label_archives">ആർക്കൈവുകൾ</string>
+    <string name="filter_label_other">മറ്റ് ഫയലുകൾ</string>
+    <string name="filter_label_files">ഫയലുകൾ</string>
+
+    <!-- Path breadcrumb -->
+    <string name="path_main_storage">പ്രധാന സ്റ്റോറേജ്</string>
+    <string name="path_storage_prefix">സ്റ്റോറേജ്</string>
+
+    <!-- Hidden items banner -->
+    <string name="hidden_unlock_title">മറഞ്ഞ ഇനങ്ങൾ അൺലോക്ക് ചെയ്യുക</string>
+    <string name="hidden_unlock_subtitle">എല്ലാ സിസ്റ്റം മറഞ്ഞ ഫയലുകളും ഫോൾഡറുകളും കാണിക്കാൻ പാസ്‌കോഡ് പരിശോധിക്കുക.</string>
+    <string name="hidden_locked_title">മറഞ്ഞ ഇനങ്ങൾ ലോക്ക് ചെയ്തിരിക്കുന്നു</string>
+    <string name="hidden_locked_subtitle">ഐഡന്റിറ്റി പരിശോധിച്ച് മറഞ്ഞ സ്റ്റോറേജ് ഉള്ളടക്കം വെളിപ്പെടുത്താൻ തിരഞ്ഞെടുക്കുക.</string>
+
+    <!-- File row / menu -->
+    <string name="cd_locked_folder">ലോക്ക് ചെയ്ത സുരക്ഷിത ഫോൾഡർ</string>
+    <string name="cd_shielded_folder">സംരക്ഷിത ഫോൾഡർ</string>
+    <string name="cd_menu_actions">മെനു പ്രവർത്തനങ്ങൾ</string>
+    <string name="menu_details">വിശദാംശങ്ങൾ</string>
+    <string name="menu_remove_shield">സുരക്ഷാ ഷീൽഡ് നീക്കം ചെയ്യുക</string>
+    <string name="menu_lock_folder">ഈ ഫോൾഡർ ലോക്ക് ചെയ്ത് സുരക്ഷിതമാക്കുക</string>
+    <string name="menu_move_vault">ബയോമെട്രിക് വോൾട്ടിലേക്ക് നീക്കുക</string>
+    <string name="menu_decompress">ZIP ഡീകംപ്രസ് ചെയ്യുക</string>
+    <string name="menu_compress">ഫോൾഡർ/ഫയൽ ZIP ആയി കംപ്രസ് ചെയ്യുക</string>
+    <string name="menu_delete">ഫയൽ ഇനം ഇല്ലാതാക്കുക</string>
+
+    <!-- File details dialog -->
+    <string name="detail_type">തരം</string>
+    <string name="detail_path">പാത്ത്</string>
+    <string name="detail_size">വലുപ്പം</string>
+    <string name="detail_items">ഇനങ്ങൾ</string>
+    <string name="detail_modified">പരിഷ്കരിച്ചത്</string>
+    <string name="detail_secured">സുരക്ഷിതം</string>
+    <string name="detail_folder">ഫോൾഡർ</string>
+
+    <!-- Create folder / file / zip dialogs -->
+    <string name="dialog_create_folder_title">പുതിയ ഫോൾഡർ സൃഷ്ടിക്കുക</string>
+    <string name="dialog_folder_name_label">ഫോൾഡർ പേര്</string>
+    <string name="dialog_folder_name_placeholder">ഉദാ. ഇൻവോയ്സുകൾ</string>
+    <string name="dialog_new_note_title">പുതിയ സുരക്ഷിത കുറിപ്പുകൾ</string>
+    <string name="dialog_filename_label">ഫയൽനാമം (.txt)</string>
+    <string name="dialog_filename_placeholder">secret_keys</string>
+    <string name="dialog_note_content_label">കുറിപ്പ് ഉള്ളടക്കം</string>
+    <string name="dialog_note_content_placeholder">സ്പർശനക്ഷമമായ വിവര വിശദാംശങ്ങൾ…</string>
+    <string name="dialog_compress_title">സ്റ്റാൻഡേർഡ് ZIP ആയി കംപ്രസ് ചെയ്യുക</string>
+    <string name="dialog_archive_name_label">ആർക്കൈവ് പേര്</string>
+
+    <!-- Auth / validation -->
+    <string name="unlock_folder_title">സുരക്ഷിത ഫോൾഡർ അൺലോക്ക് ചെയ്യുക</string>
+    <string name="unlock_folder_subtitle">\'%1$s\' എന്നതിന്റെ സംരക്ഷിത ഉള്ളടക്കം കാണാൻ ദയവായി പ്രാമാണീകരിക്കുക</string>
+    <string name="confirm_move_title">നീക്കം ലോക്ക് സ്ഥിരീകരിക്കുക</string>
+    <string name="confirm_move_subtitle">സുരക്ഷാ പരിശോധന പ്രവർത്തനക്ഷമമാണ്. \'%1$s\' വോൾട്ടിലേക്ക് സുരക്ഷിതമായി നീക്കാൻ പ്രാമാണീകരിക്കുക.</string>
+    <string name="confirm_delete_title">ഇല്ലാതാക്കൽ ലോക്ക് സ്ഥിരീകരിക്കുക</string>
+    <string name="confirm_delete_subtitle">സുരക്ഷാ പരിശോധന പ്രവർത്തനക്ഷമമാണ്. \'%1$s\' ഇല്ലാതാക്കാൻ പ്രാമാണീകരിക്കുക</string>
+    <string name="auth_passcode_title">സുരക്ഷാ പാസ്‌കോഡ് പരിശോധന</string>
+    <string name="auth_enter_app_pin">ആപ്പ് പിൻ നൽകുക</string>
+    <string name="auth_incorrect_passcode">തെറ്റായ പാസ്‌കോഡ്. വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="auth_credentials_required_title">ആപ്പ് കോഡ് ക്രെഡൻഷ്യലുകൾ ആവശ്യമാണ്</string>
+    <string name="auth_credentials_required_message">ദയവായി ക്രമീകരണ പാനലിലേക്ക് പോയി ഒരു സുരക്ഷിത ആപ്പ് പിൻ കോഡ് ക്രമീകരിക്കുക. ഉപകരണ ലോക്കുകൾ ഇല്ലെങ്കിൽ ഇത് ബയോമെട്രിക് ഫാൾബാക്ക് ആയി പ്രവർത്തിക്കും.</string>
+
+    <!-- ===== Settings screen ===== -->
+    <string name="settings_title">ക്രമീകരണങ്ങൾ</string>
+    <string name="settings_subtitle">രൂപഭാവം, സുരക്ഷ &amp; ആപ്പ് വിവരങ്ങൾ കൈകാര്യം ചെയ്യുക</string>
+    <string name="settings_section_preferences">മുൻഗണനകൾ</string>
+    <string name="settings_section_help">സഹായം &amp; വിവരങ്ങൾ</string>
+    <string name="settings_display_title">ഡിസ്‌പ്ലേ &amp; തീമുകൾ</string>
+    <string name="settings_display_subtitle">തീം, രൂപഭാവം &amp; മറഞ്ഞ ഫയലുകൾ</string>
+    <string name="settings_security_title">സുരക്ഷാ പരിരക്ഷ</string>
+    <string name="settings_security_subtitle">പാസ്‌കോഡ്, ആപ്പ് ലോക്ക് &amp; ഡാറ്റ പരിരക്ഷ</string>
+    <string name="settings_about_title">Vault Files-നെ കുറിച്ച്</string>
+    <string name="settings_about_subtitle">രചയിതാവ്, ബിൽഡ് വിശദാംശങ്ങൾ &amp; ആപ്പ് വിവരങ്ങൾ</string>
+    <string name="help_compression_q">കംപ്രഷൻ എങ്ങനെ പ്രവർത്തിക്കുന്നു?</string>
+    <string name="help_compression_a">ഫയൽ ഓപ്ഷനുകളിൽ \'Compress to ZIP\' ടാപ്പ് ചെയ്യുക. സ്രോതസ്സിനൊപ്പം ഒരു സ്റ്റാൻഡേർഡ് കംപ്രസ് ചെയ്ത ഫോൾഡർ സൃഷ്ടിക്കപ്പെടുന്നു, വലുപ്പം ലാഭിക്കുന്നു. ഏതെങ്കിലും .zip നേരിട്ട് ക്ലിക്ക് ചെയ്ത് ഡീകംപ്രസ് ചെയ്യുക.</string>
+    <string name="help_securing_q">ഫോൾഡർ സുരക്ഷിതമാക്കൽ എന്താണ്?</string>
+    <string name="help_securing_a">സുരക്ഷാ ഷീൽഡ് നില ചേർക്കുന്നത് ഡയറക്ടറികൾക്കുള്ളിലെ ലിസ്റ്റിംഗുകൾ മറയ്ക്കുന്നു, ഫോൾഡർ ഫയലുകൾ വെളിപ്പെടുത്താൻ ഉടനടി മുഖം അല്ലെങ്കിൽ വിരലടയാള സ്കാൻ ആവശ്യപ്പെടുന്നു, സിസ്റ്റം കുറിപ്പുകൾ പൂർണമായി സംരക്ഷിക്കുന്നു.</string>
+
+    <string name="theme_title">ആപ്ലിക്കേഷൻ തീം</string>
+    <string name="theme_subtitle_light">നിർബന്ധിത ലൈറ്റ് തീം</string>
+    <string name="theme_subtitle_dark">നിർബന്ധിത ഡാർക്ക് തീം</string>
+    <string name="theme_subtitle_system">സിസ്റ്റം ഡിഫോൾട്ട് ഡൈനാമിക് നിറങ്ങൾ</string>
+    <string name="theme_opt_system">സിസ്റ്റം ഡിഫോൾട്ട്</string>
+    <string name="theme_opt_light">ലൈറ്റ് മോഡ്</string>
+    <string name="theme_opt_dark">ഡാർക്ക് മോഡ്</string>
+    <string name="theme_name_system">സിസ്റ്റം</string>
+    <string name="theme_name_light">ലൈറ്റ്</string>
+    <string name="theme_name_dark">ഡാർക്ക്</string>
+
+    <string name="show_hidden_title">മറഞ്ഞ ഫയലുകളും ഫോൾഡറുകളും കാണിക്കുക</string>
+    <string name="show_hidden_subtitle">സ്റ്റാൻഡേർഡ് സ്റ്റോറേജ് ലിസ്റ്റിംഗുകളിൽ \".\" കൊണ്ട് തുടങ്ങുന്ന മറഞ്ഞ എൻട്രികൾ വെളിപ്പെടുത്തുക.</string>
+    <string name="hidden_verify_title">മറഞ്ഞ ഇനങ്ങളുടെ പരിശോധന</string>
+    <string name="hidden_verify_subtitle">മറഞ്ഞ ദൃശ്യപരത നില മാറ്റാൻ പ്രാമാണീകരണം ആവശ്യമാണ്.</string>
+
+    <string name="app_passcode_title">ആപ്പ് പാസ്‌കോഡ് (പിൻ ഫാൾബാക്ക്)</string>
+    <string name="app_passcode_none">ഒന്നും ക്രമീകരിച്ചിട്ടില്ല. ഫാൾബാക്ക് പിൻ സജ്ജമാക്കുക.</string>
+    <string name="app_passcode_active">സുരക്ഷിത ആപ്പ് പിൻ സജീവം (എൻക്രിപ്റ്റഡ്)</string>
+    <string name="protect_app_title">മുഴുവൻ ആപ്പും പാസ്‌വേഡ് പരിരക്ഷിക്കുക</string>
+    <string name="protect_app_subtitle">ആപ്ലിക്കേഷൻ തുറക്കുമ്പോൾ പാസ്‌കോഡ് അല്ലെങ്കിൽ ബയോളജിക്കൽ സ്കാൻ ആവശ്യപ്പെടുക.</string>
+    <string name="disable_app_lock_title">ആപ്പ് ലോക്ക് പ്രവർത്തനരഹിതമാക്കുക</string>
+    <string name="disable_app_lock_subtitle">ആപ്ലിക്കേഷൻ ലോഞ്ച് ലോക്ക് സുരക്ഷ പ്രവർത്തനരഹിതമാക്കാൻ പാസ്‌കോഡ് പരിശോധിക്കുക.</string>
+    <string name="protect_hidden_title">മറഞ്ഞ ഇനങ്ങൾ പാസ്‌വേഡ് പരിരക്ഷിക്കുക</string>
+    <string name="protect_hidden_subtitle">സ്റ്റാൻഡേർഡ് സിസ്റ്റം മറഞ്ഞ ഫയലുകൾ വെളിപ്പെടുത്തുന്നതിന് മുമ്പ് പാസ്‌കോഡ് പരിശോധന ആവശ്യപ്പെടുന്നു.</string>
+    <string name="disable_hidden_lock_title">മറഞ്ഞ ലോക്ക് പ്രവർത്തനരഹിതമാക്കുക</string>
+    <string name="disable_hidden_lock_subtitle">മറഞ്ഞ ഇനങ്ങളുടെ ലോക്ക് സുരക്ഷ പ്രവർത്തനരഹിതമാക്കാൻ പാസ്‌കോഡ് പരിശോധിക്കുക.</string>
+    <string name="protect_delete_title">ഇല്ലാതാക്കലും നീക്കവും പാസ്‌വേഡ് പരിരക്ഷിക്കുക</string>
+    <string name="protect_delete_subtitle">ഇനങ്ങൾ ഇല്ലാതാക്കുമ്പോഴോ വോൾട്ടിലേക്ക് നീക്കുമ്പോഴോ പിൻ അല്ലെങ്കിൽ ബയോമെട്രിക് സ്ഥിരീകരണം ആവശ്യപ്പെടുക.</string>
+    <string name="disable_actions_lock_title">പ്രവർത്തന ലോക്ക് പ്രവർത്തനരഹിതമാക്കുക</string>
+    <string name="disable_actions_lock_subtitle">സിസ്റ്റം സുരക്ഷാ പരിശോധനയില്ലാതെ ഫയൽ ഇല്ലാതാക്കലും നീക്കവും അനുവദിക്കാൻ പാസ്‌കോഡ് പരിശോധിക്കുക.</string>
+
+    <string name="shielded_ledger_label">സംരക്ഷിത ഫോൾഡറുകളുടെ ലെഡ്ജർ</string>
+    <string name="shielded_empty_title">ഇതുവരെ ഒരു ഫോൾഡറിനും ലോക്ക് ഇല്ല</string>
+    <string name="shielded_empty_subtitle">ഫയൽ മാനേജർ കോൺടെക്സ്റ്റ് മെനുവിൽ നിന്ന് ഡയറക്ടറികൾ ലോക്ക് ചെയ്താൽ അവ ഇവിടെ കാണാം.</string>
+    <string name="cd_shield_icon">ഷീൽഡ് ഐക്കൺ</string>
+    <string name="cd_remove_shield">ഷീൽഡ് നീക്കം ചെയ്യുക</string>
+
+    <string name="pin_setup_title">സുരക്ഷാ ആപ്പ് പിൻ സജ്ജമാക്കുക</string>
+    <string name="pin_setup_message">ബയോമെട്രിക് സ്കാനർ പരിശോധന ലഭ്യമല്ലെങ്കിൽ ഈ പിൻ സുരക്ഷിത ഫാൾബാക്ക് ക്രെഡൻഷ്യൽ ലോക്ക് ആയി പ്രവർത്തിക്കുന്നു.</string>
+    <string name="pin_setup_enter_label">സംഖ്യാ പിൻ നൽകുക (4-6 അക്കങ്ങൾ)</string>
+    <string name="pin_setup_confirm_label">പിൻ സ്ഥിരീകരിക്കുക</string>
+    <string name="pin_setup_error">പിന്നുകൾ പൊരുത്തപ്പെടുന്നില്ല അല്ലെങ്കിൽ ശൂന്യമാണ്.</string>
+
+    <string name="security_verification_title">സുരക്ഷാ പരിശോധന</string>
+    <string name="credentials_required_title">ക്രെഡൻഷ്യലുകൾ ആവശ്യമാണ്</string>
+    <string name="credentials_required_message">ദയവായി ക്രമീകരണങ്ങളിലേക്ക് പോയി ഒരു ആപ്പ് പിൻ സജ്ജമാക്കുക. ഇത് സുരക്ഷിത പരിശോധന ഫാൾബാക്ക് നൽകുന്നു.</string>
+
+    <!-- ===== Secure vault screen ===== -->
+    <string name="vault_screen_title">സുരക്ഷിത വോൾട്ട്</string>
+    <string name="cd_lock_vault">വോൾട്ട് ലോക്ക് ചെയ്യുക</string>
+    <string name="vault_empty_title">നിങ്ങളുടെ സുരക്ഷിത വോൾട്ട് ശൂന്യമാണ്</string>
+    <string name="vault_empty_message">സ്പർശനക്ഷമമായ ഫയലുകൾ സുരക്ഷിതമായി മറയ്ക്കാൻ ഫയൽ മാനേജർ ടാബിൽ നിന്ന് നീക്കുക. ബയോമെട്രിക് കീകൾ ഉപയോഗിച്ച് മാത്രമേ അവ ആക്സസ് ചെയ്യാനാകൂ.</string>
+    <string name="vault_disclaimer">ചുവടെ കാണിച്ചിരിക്കുന്ന എല്ലാ ഫയലുകളും ഒരു നിയന്ത്രിത ഡയറക്ടറിക്കുള്ളിൽ ഒറ്റപ്പെട്ട് സുരക്ഷിതമായി മറച്ചിരിക്കുന്നു. ആപ്പ് വിട്ടുപോകുന്നതിന് മുമ്പ് സെഷൻ ലോക്ക് ചെയ്യുക.</string>
+    <string name="cd_lock">ലോക്ക്</string>
+    <string name="vault_locked_title">ബയോമെട്രിക് വോൾട്ട് ലോക്ക് ചെയ്തു</string>
+    <string name="vault_locked_message">പ്രാമാണീകരണം ആവശ്യമാണ്. നിങ്ങളുടെ ഐഡന്റിറ്റി പരിശോധിച്ച് ഫയലുകൾ കാണാൻ ചുവടെ ടാപ്പ് ചെയ്യുക.</string>
+    <string name="vault_biometric_title">വോൾട്ട് സുരക്ഷിത ആക്സസ്</string>
+    <string name="vault_biometric_subtitle">വോൾട്ടിൽ പ്രവേശിക്കാൻ ബയോമെട്രിക് അനുമതി നൽകുക.</string>
+    <string name="vault_unlock_btn">സുരക്ഷിത വോൾട്ട് അൺലോക്ക് ചെയ്യുക</string>
+    <string name="vault_unlock_pin_alt">അല്ലെങ്കിൽ സുരക്ഷാ പിൻ പാസ്‌കോഡ് ഉപയോഗിച്ച് അൺലോക്ക് ചെയ്യുക</string>
+    <string name="vault_enter_pin_title">സുരക്ഷിത ആപ്പ് പിൻ നൽകുക</string>
+    <string name="vault_pin_message">പ്രാമാണീകരണ ഫാൾബാക്ക്. ലോക്ക് ചെയ്ത വോൾട്ട് ആക്സസ് ചെയ്യാൻ നിങ്ങളുടെ സുരക്ഷാ പിൻ പാസ്‌കോഡ് നൽകുക.</string>
+    <string name="vault_app_code_label">ആപ്പ് കോഡ്</string>
+    <string name="vault_pin_error">തെറ്റായ പാസ്‌വേഡ് പിൻ</string>
+    <string name="cd_restore">പുനഃസ്ഥാപിക്കുക</string>
+    <string name="cd_delete_permanently">ശാശ്വതമായി ഇല്ലാതാക്കുക</string>
+
+    <!-- ===== ViewModel user messages ===== -->
+    <string name="msg_folder_created">ഫോൾഡർ വിജയകരമായി സൃഷ്ടിച്ചു: %1$s</string>
+    <string name="msg_folder_create_failed">ഫോൾഡർ സൃഷ്ടിക്കാനായില്ല. പേര് ഇതിനകം നിലവിലുണ്ടാകാം.</string>
+    <string name="msg_file_created">ഫയൽ വിജയകരമായി സൃഷ്ടിച്ചു: %1$s</string>
+    <string name="msg_file_create_failed">ഫയൽ സൃഷ്ടിക്കാനായില്ല.</string>
+    <string name="msg_deleted">ഇല്ലാതാക്കി: %1$s</string>
+    <string name="msg_delete_failed">%1$s ഇല്ലാതാക്കാനായില്ല</string>
+    <string name="msg_zip_success">%1$s വിജയകരമായി %2$s-ലേക്ക് സിപ്പ് ചെയ്തു</string>
+    <string name="msg_zip_failed">സിപ്പ് ആർക്കൈവ് സൃഷ്ടിക്കാനായില്ല.</string>
+    <string name="msg_extract_success">%1$s-ന്റെ ഉള്ളടക്കം വിജയകരമായി എക്സ്ട്രാക്റ്റ് ചെയ്തു</string>
+    <string name="msg_extract_failed">സിപ്പ് ആർക്കൈവ് എക്സ്ട്രാക്റ്റ് ചെയ്യാനായില്ല.</string>
+    <string name="msg_shield_removed">ഷീൽഡ് നീക്കം ചെയ്തു: %1$s</string>
+    <string name="msg_folder_secured">ഫോൾഡർ വിജയകരമായി സുരക്ഷിതമാക്കി: %1$s</string>
+    <string name="msg_moved_to_vault">%1$s സുരക്ഷിതമായി വോൾട്ടിലേക്ക് നീക്കി.</string>
+    <string name="msg_move_vault_failed">%1$s വോൾട്ടിലേക്ക് നീക്കാനായില്ല. അത് ഒരു ഡയറക്ടറി അല്ലെന്ന് ഉറപ്പാക്കുക.</string>
+    <string name="msg_restored">പുനഃസ്ഥാപിച്ചു: %1$s \'Storage/Restored\' ഫോൾഡറിനുള്ളിൽ.</string>
+    <string name="msg_restore_failed">വോൾട്ട് ഫയൽ പുനഃസ്ഥാപിക്കാനായില്ല.</string>
+    <string name="msg_vault_deleted">%1$s വോൾട്ടിൽ നിന്ന് ശാശ്വതമായി ഇല്ലാതാക്കി.</string>
+    <string name="msg_vault_delete_failed">വോൾട്ട് ഫയൽ ഇല്ലാതാക്കാനായില്ല.</string>
+    <string name="msg_delete_lock_enabled">ഇല്ലാതാക്കലും നീക്കവും ലോക്ക് പരിരക്ഷ പ്രവർത്തനക്ഷമമാക്കി</string>
+    <string name="msg_delete_lock_disabled">ഇല്ലാതാക്കലും നീക്കവും ലോക്ക് പരിരക്ഷ പ്രവർത്തനരഹിതമാക്കി</string>
+    <string name="msg_pin_updated">സുരക്ഷാ പിൻ പാസ്‌കോഡ് വിജയകരമായി അപ്ഡേറ്റ് ചെയ്തു.</string>
+    <string name="msg_theme_system">തീം സിസ്റ്റത്തിലേക്ക് മാറ്റി</string>
+    <string name="msg_theme_light">തീം ലൈറ്റിലേക്ക് മാറ്റി</string>
+    <string name="msg_theme_dark">തീം ഡാർക്കിലേക്ക് മാറ്റി</string>
+    <string name="msg_hidden_listed">മറഞ്ഞ ഫയലുകൾ ലിസ്റ്റ് ചെയ്യും</string>
+    <string name="msg_hidden_hidden">മറഞ്ഞ ഫയലുകൾ മറയ്ക്കും</string>
+    <string name="msg_app_lock_enabled">ആപ്പ് ലോഞ്ച് സുരക്ഷാ ലോക്ക് പ്രവർത്തനക്ഷമമാക്കി</string>
+    <string name="msg_app_lock_disabled">ആപ്പ് ലോഞ്ച് സുരക്ഷാ ലോക്ക് പ്രവർത്തനരഹിതമാക്കി</string>
+    <string name="msg_hidden_lock_enabled">മറഞ്ഞ ഫയലുകളുടെ സുരക്ഷാ ലോക്ക് പ്രവർത്തനക്ഷമമാക്കി</string>
+    <string name="msg_hidden_lock_disabled">മറഞ്ഞ ഫയലുകളുടെ സുരക്ഷാ ലോക്ക് പ്രവർത്തനരഹിതമാക്കി</string>
+    <string name="msg_source_device">സ്റ്റോറേജ് സ്രോതസ്സ് ഉപകരണ സ്റ്റോറേജിലേക്ക് മാറ്റി</string>
+    <string name="msg_source_sandbox">സ്റ്റോറേജ് സ്രോതസ്സ് ആപ്പ് സാൻഡ്‌ബോക്സിലേക്ക് മാറ്റി</string>
+    <string name="msg_cannot_launch_settings_files">സിസ്റ്റം ക്രമീകരണങ്ങൾ തുറക്കാനായില്ല. ദയവായി ഫയൽ അനുമതി സ്വമേധയാ നൽകുക.</string>
+    <string name="msg_cannot_launch_settings">ക്രമീകരണങ്ങൾ തുറക്കാനായില്ല. ദയവായി അനുമതി സ്വമേധയാ പ്രവർത്തനക്ഷമമാക്കുക.</string>
+    <string name="msg_viewing_file">കാണുന്നു: %1$s (%2$s)</string>
+    <string name="msg_configure_pin_tab">ദയവായി ക്രമീകരണ ടാബിൽ സുരക്ഷാ പാസ്‌കോഡ് പിൻ ക്രമീകരിക്കുക.</string>
+    <string name="msg_configure_pin_settings">ദയവായി ക്രമീകരണങ്ങളിൽ സുരക്ഷാ പാസ്‌കോഡ് പിൻ ക്രമീകരിക്കുക.</string>
+    <string name="msg_pin_required_protection">പരിരക്ഷ പ്രവർത്തനക്ഷമമാക്കുന്നതിന് മുമ്പ് പിൻ ക്രമീകരണം ആവശ്യമാണ്.</string>
+    <string name="msg_setup_pin_fallback">ഫാൾബാക്ക് പാസ്‌കോഡിനായി ക്രമീകരണങ്ങളിൽ ആപ്പ് സുരക്ഷാ പിൻ സജ്ജമാക്കുക.</string>
+    <string name="msg_vault_requires_pin">വോൾട്ട് ലോക്കിന് ഒരു സുരക്ഷാ പിൻ ഫാൾബാക്ക് സജ്ജീകരണം ആവശ്യമാണ്. ക്രമീകരണങ്ങൾ കാണുക.</string>
+
+    <!-- ===== Plurals ===== -->
+    <plurals name="folder_count">
+        <item quantity="one">%1$d ഫോൾഡർ</item>
+        <item quantity="other">%1$d ഫോൾഡറുകൾ</item>
+    </plurals>
+    <plurals name="item_count">
+        <item quantity="one">%1$d ഇനം</item>
+        <item quantity="other">%1$d ഇനങ്ങൾ</item>
+    </plurals>
+</resources>

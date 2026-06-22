@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Shield Rim -->
+    <path
+        android:fillColor="#E3A857"
+        android:pathData="M54,20 C68,26 84,26 84,26 C84,26 84,54 84,65 C84,79 66,88 54,92 C42,88 24,79 24,65 C24,54 24,26 24,26 C24,26 40,26 54,20 Z" />
+        
+    <!-- Inner Dark Shield -->
+    <path
+        android:fillColor="#150E24"
+        android:pathData="M54,24 C65,29 79,29 79,29 C79,29 79,54 79,64 C79,75 64,83 54,87 C44,83 29,75 29,64 C29,54 29,29 29,29 C29,29 43,29 54,24 Z" />
+
+    <!-- Safe Vault Keyholes / Fingerprint silhouette -->
+    <path
+        android:fillColor="#F39C12"
+        android:pathData="M54,42 C48,42 44,46 44,52 C44,57 48,60 52,61 L52,72 C52,73 53,74 54,74 C55,74 56,73 56,72 L56,61 C60,60 64,57 64,52 C64,46 60,42 54,42 Z M54,54 C52.5,54 51,53 51,51.5 C51,50 52.5,48.5 54,48.5 C55.5,48.5 57,50 57,51.5 C57,53 55.5,54 54,54 Z" />
+</vector>
