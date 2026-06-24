@@ -25,6 +25,9 @@
     <string name="action_modify">Modify</string>
     <string name="action_save_pin">Save PIN</string>
     <string name="action_decrypt">Decrypt</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_update">Update</string>
+    <string name="action_delete">Delete</string>
     <string name="common_yes">Yes</string>
     <string name="common_no">No</string>
     <string name="cd_back">Back</string>
@@ -83,6 +86,9 @@
     <string name="sort_date">Date</string>
     <string name="sort_by">Sort by %1$s</string>
     <string name="cd_sort">Sort</string>
+    <string name="cd_view_list">List view</string>
+    <string name="cd_view_grid">Grid view</string>
+    <string name="cd_view_compact">Compact view</string>
     <string name="files_filter_chip">%1$s · %2$d</string>
     <string name="cd_clear_filter">Clear filter</string>
     <string name="cd_navigate_up">Up</string>
@@ -101,6 +107,10 @@
     <string name="files_no_category_detail">There are no files of this type in the current storage source.</string>
     <string name="files_empty_folder_detail">Create new folders or write text files using the buttons in the header.</string>
     <string name="cd_empty_folder">Empty Folder</string>
+    <string name="cd_close_preview">Close preview</string>
+    <string name="image_preview_error">Can\'t preview this image format.</string>
+    <string name="text_preview_error">Can\'t display this file as text.</string>
+    <string name="text_preview_truncated">Large file — showing the first part only.</string>
     <string name="perm_device_access_title">Device Storage Access Required</string>
     <string name="perm_device_access_message">To browse and inspect files/folders on this device\'s storage, you must authorize \'All Files Access\' manually in android system settings.</string>
     <string name="perm_open_storage_settings">Open Storage Settings</string>
@@ -150,7 +160,7 @@
     <string name="dialog_folder_name_label">Folder Name</string>
     <string name="dialog_folder_name_placeholder">e.g. Invoices</string>
     <string name="dialog_new_note_title">New Secure Notes</string>
-    <string name="dialog_filename_label">Filename (.txt)</string>
+    <string name="dialog_filename_label">Filename (.securenote)</string>
     <string name="dialog_filename_placeholder">secret_keys</string>
     <string name="dialog_note_content_label">Note content</string>
     <string name="dialog_note_content_placeholder">Sensitive information details…</string>
@@ -199,6 +209,10 @@
 
     <string name="show_hidden_title">Show Hidden Files &amp; Folders</string>
     <string name="show_hidden_subtitle">Reveal hidden entries starting with \".\" inside standard storage listings.</string>
+    <string name="image_preview_title">Image Preview</string>
+    <string name="image_preview_subtitle">Tap an image file to view it full-screen inside the app.</string>
+    <string name="text_preview_title">Text Preview</string>
+    <string name="text_preview_subtitle">Tap a text file to read it inside the app.</string>
     <string name="hidden_verify_title">Hidden Items Verification</string>
     <string name="hidden_verify_subtitle">Authentication is required to toggle hidden visibility status.</string>
 
@@ -259,6 +273,9 @@
     <string name="msg_folder_create_failed">Failed to create folder. Name may already exist.</string>
     <string name="msg_file_created">File created successfully: %1$s</string>
     <string name="msg_file_create_failed">Failed to create file.</string>
+    <string name="msg_note_open_failed">Couldn\'t open this note.</string>
+    <string name="msg_note_updated">Note updated.</string>
+    <string name="msg_note_update_failed">Couldn\'t update this note.</string>
     <string name="msg_deleted">Deleted: %1$s</string>
     <string name="msg_delete_failed">Could not delete %1$s</string>
     <string name="msg_zip_success">Successfully zipped %1$s into %2$s</string>
@@ -281,6 +298,10 @@
     <string name="msg_theme_dark">Theme changed to Dark</string>
     <string name="msg_hidden_listed">Hidden files will be listed</string>
     <string name="msg_hidden_hidden">Hidden files will be hidden</string>
+    <string name="msg_image_preview_enabled">Image preview enabled</string>
+    <string name="msg_image_preview_disabled">Image preview disabled</string>
+    <string name="msg_text_preview_enabled">Text preview enabled</string>
+    <string name="msg_text_preview_disabled">Text preview disabled</string>
     <string name="msg_app_lock_enabled">App launch security lock enabled</string>
     <string name="msg_app_lock_disabled">App launch security lock disabled</string>
     <string name="msg_hidden_lock_enabled">Hidden files security lock enabled</string>

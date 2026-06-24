@@ -8,20 +8,30 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,13 +39,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -43,16 +57,43 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.FragmentActivity
+import coil.ImageLoader
+import coil.compose.SubcomposeAsyncImage
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 import com.example.data.FileItem
 import com.example.utils.BiometricHelper
 import `in`.sreerajp.vault_files.R
+import androidx.core.graphics.drawable.toBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 enum class FileSortMode(@param:androidx.annotation.StringRes val labelRes: Int) {
     NAME(R.string.sort_name),
     SIZE(R.string.sort_size),
     DATE(R.string.sort_date)
+}
+
+/** Files-explorer layout. [storageKey] is the value persisted in settings. */
+enum class FileViewMode(
+    val storageKey: String,
+    val icon: ImageVector,
+    @param:androidx.annotation.StringRes val contentDescRes: Int
+) {
+    LIST("list", Icons.AutoMirrored.Filled.ViewList, R.string.cd_view_list),
+    GRID("grid", Icons.Default.GridView, R.string.cd_view_grid),
+    COMPACT("compact", Icons.Default.ViewHeadline, R.string.cd_view_compact);
+
+    companion object {
+        fun fromKey(key: String): FileViewMode = values().firstOrNull { it.storageKey == key } ?: LIST
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +111,13 @@ fun FileExplorerScreen(
     val isPhoneLockDeleteEnabled by viewModel.phoneLockDeleteEnabled.collectAsState()
     val customPinValue by viewModel.customPin.collectAsState()
     val unlockedFolderSessions by viewModel.unlockedFolderSessions.collectAsState()
+    val openNote by viewModel.openNote.collectAsState()
+    val imagePreviewEnabled by viewModel.imagePreviewEnabled.collectAsState()
+    val imagePreview by viewModel.imagePreview.collectAsState()
+    val textPreviewEnabled by viewModel.textPreviewEnabled.collectAsState()
+    val textPreview by viewModel.textPreview.collectAsState()
+    val fileViewModeKey by viewModel.fileViewMode.collectAsState()
+    val fileViewMode = FileViewMode.fromKey(fileViewModeKey)
 
     val storageSourceMode by viewModel.storageSourceMode.collectAsState()
     var hasPermission by remember { mutableStateOf(hasAllFilesPermission(context)) }
@@ -417,6 +465,14 @@ fun FileExplorerScreen(
                         letterSpacing = 0.6.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                    ViewModeToggle(
+                        current = fileViewMode,
+                        onSelect = { viewModel.updateFileViewMode(it.storageKey) }
+                    )
                     Box {
                         Row(
                             modifier = Modifier
@@ -460,6 +516,7 @@ fun FileExplorerScreen(
                                 )
                             }
                         }
+                    }
                     }
                 }
             }
@@ -595,41 +652,93 @@ fun FileExplorerScreen(
                         )
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        contentPadding = PaddingValues(top = 2.dp, bottom = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(9.dp)
-                    ) {
-                        items(displayedFiles, key = { it.absolutePath }) { item ->
-                            FileRowItem(
-                                item = item,
-                                onItemClick = {
-                                    if (item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)) {
-                                        activeActionPendingValidation = PendingAction(
-                                            title = context.getString(R.string.unlock_folder_title),
-                                            subtitle = context.getString(R.string.unlock_folder_subtitle, item.name),
-                                            onValidated = {
-                                                viewModel.unlockSecuredFolderSession(item.absolutePath)
-                                                if (item.isDirectory) {
-                                                    viewModel.navigateToDirectory(item.file)
-                                                }
-                                            }
-                                        )
-                                    } else {
-                                        if (item.isDirectory) {
-                                            viewModel.navigateToDirectory(item.file)
-                                        } else if (item.name.lowercase().endsWith(".zip")) {
-                                            viewModel.decompressZip(item)
-                                        } else {
-                                            viewModel.dispatchMessage(context.getString(R.string.msg_viewing_file, item.name, formatBytes(item.size)))
-                                        }
+                    // Shared tap behaviour for every view mode: unlock prompt for secured
+                    // folders, otherwise navigate / extract / open note / preview / fallback.
+                    val handleItemClick: (FileItem) -> Unit = { item ->
+                        if (item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)) {
+                            activeActionPendingValidation = PendingAction(
+                                title = context.getString(R.string.unlock_folder_title),
+                                subtitle = context.getString(R.string.unlock_folder_subtitle, item.name),
+                                onValidated = {
+                                    viewModel.unlockSecuredFolderSession(item.absolutePath)
+                                    if (item.isDirectory) {
+                                        viewModel.navigateToDirectory(item.file)
                                     }
-                                },
-                                onActionMenuOpen = { expandedMenuForFileItem = item },
-                                isSecuredLocked = item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)
+                                }
                             )
+                        } else {
+                            if (item.isDirectory) {
+                                viewModel.navigateToDirectory(item.file)
+                            } else if (item.name.lowercase().endsWith(".zip")) {
+                                viewModel.decompressZip(item)
+                            } else if (item.name.lowercase().endsWith(".securenote")) {
+                                viewModel.openNote(item)
+                            } else if (item.category == "Image" && imagePreviewEnabled) {
+                                viewModel.openImagePreview(item)
+                            } else if (textPreviewEnabled && viewModel.isTextPreviewable(item)) {
+                                viewModel.openTextPreview(item)
+                            } else {
+                                viewModel.dispatchMessage(context.getString(R.string.msg_viewing_file, item.name, formatBytes(item.size)))
+                            }
+                        }
+                    }
+
+                    when (fileViewMode) {
+                        FileViewMode.GRID -> {
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 104.dp),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 12.dp),
+                                contentPadding = PaddingValues(top = 2.dp, bottom = 24.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                items(displayedFiles, key = { it.absolutePath }) { item ->
+                                    FileGridItem(
+                                        item = item,
+                                        onItemClick = { handleItemClick(item) },
+                                        onActionMenuOpen = { expandedMenuForFileItem = item },
+                                        isSecuredLocked = item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)
+                                    )
+                                }
+                            }
+                        }
+                        FileViewMode.COMPACT -> {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                contentPadding = PaddingValues(top = 2.dp, bottom = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                items(displayedFiles, key = { it.absolutePath }) { item ->
+                                    FileCompactRow(
+                                        item = item,
+                                        onItemClick = { handleItemClick(item) },
+                                        onActionMenuOpen = { expandedMenuForFileItem = item },
+                                        isSecuredLocked = item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)
+                                    )
+                                }
+                            }
+                        }
+                        FileViewMode.LIST -> {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                contentPadding = PaddingValues(top = 2.dp, bottom = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(9.dp)
+                            ) {
+                                items(displayedFiles, key = { it.absolutePath }) { item ->
+                                    FileRowItem(
+                                        item = item,
+                                        onItemClick = { handleItemClick(item) },
+                                        onActionMenuOpen = { expandedMenuForFileItem = item },
+                                        isSecuredLocked = item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -696,6 +805,22 @@ fun FileExplorerScreen(
             )
         }
 
+        // --- Full-screen Image Preview ---
+        imagePreview?.let { previewItem ->
+            ImagePreviewDialog(
+                item = previewItem,
+                onDismiss = { viewModel.closeImagePreview() }
+            )
+        }
+
+        // --- Full-screen Text Preview ---
+        textPreview?.let { state ->
+            TextPreviewDialog(
+                state = state,
+                onDismiss = { viewModel.closeTextPreview() }
+            )
+        }
+
         // --- Folder Creator Dialog ---
         if (showCreateFolderDialog) {
             var folderNameInput by remember { mutableStateOf("") }
@@ -733,52 +858,189 @@ fun FileExplorerScreen(
             )
         }
 
-        // --- Text File Creator Dialog ---
+        // --- Secure Note Creator Bottom Sheet ---
         if (showCreateFileDialog) {
             var filenameInput by remember { mutableStateOf("") }
             var textContentInput by remember { mutableStateOf("") }
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val sheetScope = rememberCoroutineScope()
 
-            AlertDialog(
+            fun dismissSheet() {
+                sheetScope.launch { sheetState.hide() }.invokeOnCompletion {
+                    if (!sheetState.isVisible) showCreateFileDialog = false
+                }
+            }
+
+            ModalBottomSheet(
                 onDismissRequest = { showCreateFileDialog = false },
-                title = { Text(stringResource(R.string.dialog_new_note_title)) },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = filenameInput,
-                            onValueChange = { filenameInput = it },
-                            label = { Text(stringResource(R.string.dialog_filename_label)) },
-                            placeholder = { Text(stringResource(R.string.dialog_filename_placeholder)) },
-                            modifier = Modifier.fillMaxWidth().testTag("note_filename_field"),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = textContentInput,
-                            onValueChange = { textContentInput = it },
-                            label = { Text(stringResource(R.string.dialog_note_content_label)) },
-                            placeholder = { Text(stringResource(R.string.dialog_note_content_placeholder)) },
-                            modifier = Modifier.fillMaxWidth().height(120.dp).testTag("note_content_field")
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (filenameInput.isNotBlank()) {
-                                viewModel.createTextFile(filenameInput.trim(), textContentInput)
-                                showCreateFileDialog = false
-                            }
-                        },
-                        modifier = Modifier.testTag("confirm_create_note_btn")
+                sheetState = sheetState
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.75f)
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.dialog_new_note_title),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    OutlinedTextField(
+                        value = filenameInput,
+                        onValueChange = { filenameInput = it },
+                        label = { Text(stringResource(R.string.dialog_filename_label)) },
+                        placeholder = { Text(stringResource(R.string.dialog_filename_placeholder)) },
+                        modifier = Modifier.fillMaxWidth().testTag("note_filename_field"),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = textContentInput,
+                        onValueChange = { textContentInput = it },
+                        label = { Text(stringResource(R.string.dialog_note_content_label)) },
+                        placeholder = { Text(stringResource(R.string.dialog_note_content_placeholder)) },
+                        modifier = Modifier.fillMaxWidth().weight(1f).testTag("note_content_field")
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(stringResource(R.string.action_save_file))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showCreateFileDialog = false }) {
-                        Text(stringResource(R.string.action_cancel))
+                        TextButton(onClick = { dismissSheet() }) {
+                            Text(stringResource(R.string.action_cancel))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                if (filenameInput.isNotBlank()) {
+                                    viewModel.createTextFile(filenameInput.trim(), textContentInput)
+                                    dismissSheet()
+                                }
+                            },
+                            modifier = Modifier.testTag("confirm_create_note_btn")
+                        ) {
+                            Text(stringResource(R.string.action_save_file))
+                        }
                     }
                 }
-            )
+            }
+        }
+
+        // --- Secure Note Viewer/Editor Bottom Sheet ---
+        openNote?.let { note ->
+            val viewerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val viewerScope = rememberCoroutineScope()
+            var isEditing by remember(note.file.absolutePath) { mutableStateOf(false) }
+            var editContent by remember(note.file.absolutePath) { mutableStateOf(note.content) }
+
+            fun dismissViewer() {
+                viewerScope.launch { viewerSheetState.hide() }.invokeOnCompletion {
+                    if (!viewerSheetState.isVisible) viewModel.closeNote()
+                }
+            }
+
+            ModalBottomSheet(
+                onDismissRequest = { viewModel.closeNote() },
+                sheetState = viewerSheetState
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.75f)
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = note.name,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (isEditing) {
+                        OutlinedTextField(
+                            value = editContent,
+                            onValueChange = { editContent = it },
+                            label = { Text(stringResource(R.string.dialog_note_content_label)) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .testTag("note_edit_field")
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(onClick = {
+                                editContent = note.content
+                                isEditing = false
+                            }) {
+                                Text(stringResource(R.string.action_cancel))
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = {
+                                    viewModel.saveNoteEdits(editContent)
+                                    isEditing = false
+                                },
+                                modifier = Modifier.testTag("note_save_edit_btn")
+                            ) {
+                                Text(stringResource(R.string.action_update))
+                            }
+                        }
+                    } else {
+                        SelectionContainer(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = note.content,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    val target = note
+                                    viewModel.closeNote()
+                                    if (isPhoneLockDeleteEnabled) {
+                                        activeActionPendingValidation = PendingAction(
+                                            title = context.getString(R.string.confirm_delete_title),
+                                            subtitle = context.getString(R.string.confirm_delete_subtitle, target.name),
+                                            onValidated = { viewModel.deleteOpenNoteFile(target.file, target.name) }
+                                        )
+                                    } else {
+                                        viewModel.deleteOpenNoteFile(target.file, target.name)
+                                    }
+                                },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text(stringResource(R.string.action_delete))
+                            }
+                            Spacer(modifier = Modifier.weight(1f))
+                            TextButton(onClick = { dismissViewer() }) {
+                                Text(stringResource(R.string.action_close))
+                            }
+                            Button(
+                                onClick = { isEditing = true },
+                                modifier = Modifier.testTag("note_edit_btn")
+                            ) {
+                                Text(stringResource(R.string.action_edit))
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // --- ZIP Compress Options Dialog ---
@@ -982,6 +1244,45 @@ private fun SourcePill(
     }
 }
 
+/** Compact segmented control of the three [FileViewMode] icons, shown in the section header. */
+@Composable
+private fun ViewModeToggle(
+    current: FileViewMode,
+    onSelect: (FileViewMode) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(9.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = Modifier.testTag("files_view_toggle")
+    ) {
+        Row(
+            modifier = Modifier.padding(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            FileViewMode.values().forEach { mode ->
+                val selected = mode == current
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .clickable { onSelect(mode) }
+                        .padding(5.dp)
+                        .testTag("files_view_${mode.storageKey}"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = mode.icon,
+                        contentDescription = stringResource(mode.contentDescRes),
+                        tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun FileRowItem(
     item: FileItem,
@@ -991,15 +1292,20 @@ fun FileRowItem(
 ) {
     val fileIcon = getIconForFileCategory(item)
     val iconTint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val isApk = !item.isDirectory && item.name.substringAfterLast('.', "").lowercase() == "apk"
     val dateText = remember(item.file) {
         val lastMod = item.file.lastModified()
         val format = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
         format.format(java.util.Date(lastMod))
     }
+    // Size now lives on the meta line (freeing the full row width for the name). For directories
+    // the size is appended only once it has finished computing; otherwise a small inline spinner
+    // is shown at the end of the meta row instead.
     val metaText = if (item.isDirectory) {
-        "$dateText · " + pluralStringResource(R.plurals.item_count, item.itemCount, item.itemCount)
+        val items = pluralStringResource(R.plurals.item_count, item.itemCount, item.itemCount)
+        if (item.sizeComputed) "$dateText · $items · ${formatBytes(item.size)}" else "$dateText · $items"
     } else {
-        dateText
+        "$dateText · ${formatBytes(item.size)}"
     }
 
     Surface(
@@ -1031,6 +1337,12 @@ fun FileRowItem(
                         tint = Color(0xFFE74C3C),
                         modifier = Modifier.size(22.dp)
                     )
+                } else if (isApk) {
+                    ApkIcon(
+                        apkPath = item.absolutePath,
+                        contentDescription = item.name,
+                        fallbackTint = iconTint
+                    )
                 } else {
                     Icon(
                         imageVector = fileIcon,
@@ -1046,13 +1358,11 @@ fun FileRowItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
+                    MiddleEllipsisText(
                         text = item.name,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.5.sp,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
                     )
 
@@ -1066,29 +1376,29 @@ fun FileRowItem(
                     }
                 }
 
-                Text(
-                    text = metaText,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-
-            if (item.isDirectory && !item.sizeComputed) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(14.dp)
-                )
-            } else {
-                Text(
-                    text = formatBytes(item.size),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                )
+                Row(
+                    modifier = Modifier.padding(top = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = metaText,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    // Directory size is still being summed: show a small inline spinner after the
+                    // item count instead of a size on the (now removed) right-hand column.
+                    if (item.isDirectory && !item.sizeComputed) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(11.dp)
+                        )
+                    }
+                }
             }
 
             IconButton(
@@ -1102,6 +1412,269 @@ fun FileRowItem(
                     contentDescription = stringResource(R.string.cd_menu_actions),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Grid/thumbnail tile. Image files render a real Coil thumbnail (falling back to the category
+ * icon while loading or on decode failure); folders, APKs, and other types show their icon.
+ */
+@Composable
+fun FileGridItem(
+    item: FileItem,
+    onItemClick: () -> Unit,
+    onActionMenuOpen: () -> Unit,
+    isSecuredLocked: Boolean
+) {
+    val fileIcon = getIconForFileCategory(item)
+    val iconTint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val isApk = !item.isDirectory && item.name.substringAfterLast('.', "").lowercase() == "apk"
+    val showThumbnail = !isSecuredLocked && !item.isDirectory && item.category == "Image"
+
+    val metaText = if (item.isDirectory) {
+        if (item.sizeComputed) formatBytes(item.size) else null
+    } else {
+        formatBytes(item.size)
+    }
+
+    Surface(
+        onClick = onItemClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        shadowElevation = 1.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("file_grid_${item.name}")
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .background(iconTint.copy(alpha = 0.10f)),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isSecuredLocked -> Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = stringResource(R.string.cd_locked_folder),
+                        tint = Color(0xFFE74C3C),
+                        modifier = Modifier.size(30.dp)
+                    )
+                    showThumbnail -> SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(item.file)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        loading = {
+                            Icon(
+                                imageVector = fileIcon,
+                                contentDescription = null,
+                                tint = iconTint,
+                                modifier = Modifier.size(34.dp)
+                            )
+                        },
+                        error = {
+                            Icon(
+                                imageVector = fileIcon,
+                                contentDescription = item.category,
+                                tint = iconTint,
+                                modifier = Modifier.size(34.dp)
+                            )
+                        }
+                    )
+                    isApk -> ApkIcon(
+                        apkPath = item.absolutePath,
+                        contentDescription = item.name,
+                        fallbackTint = iconTint
+                    )
+                    else -> Icon(
+                        imageVector = fileIcon,
+                        contentDescription = item.category,
+                        tint = iconTint,
+                        modifier = Modifier.size(34.dp)
+                    )
+                }
+
+                if (item.isSecured) {
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = stringResource(R.string.cd_shielded_folder),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .size(15.dp)
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(2.dp)
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
+                        .clickable { onActionMenuOpen() }
+                        .testTag("options_${item.name}"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.cd_menu_actions),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                Text(
+                    text = item.name,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.5.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    modifier = Modifier.padding(top = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    if (metaText != null) {
+                        Text(
+                            text = metaText,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+                    if (item.isDirectory && !item.sizeComputed) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(11.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Dense single-line row used by the compact view mode. */
+@Composable
+fun FileCompactRow(
+    item: FileItem,
+    onItemClick: () -> Unit,
+    onActionMenuOpen: () -> Unit,
+    isSecuredLocked: Boolean
+) {
+    val fileIcon = getIconForFileCategory(item)
+    val iconTint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val isApk = !item.isDirectory && item.name.substringAfterLast('.', "").lowercase() == "apk"
+    val sizeText = if (item.isDirectory) {
+        if (item.sizeComputed) formatBytes(item.size) else null
+    } else {
+        formatBytes(item.size)
+    }
+
+    Surface(
+        onClick = onItemClick,
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("file_compact_${item.name}")
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(iconTint.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isSecuredLocked -> Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = stringResource(R.string.cd_locked_folder),
+                        tint = Color(0xFFE74C3C),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    isApk -> ApkIcon(
+                        apkPath = item.absolutePath,
+                        contentDescription = item.name,
+                        fallbackTint = iconTint
+                    )
+                    else -> Icon(
+                        imageVector = fileIcon,
+                        contentDescription = item.category,
+                        tint = iconTint,
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
+            }
+
+            MiddleEllipsisText(
+                text = item.name,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+
+            if (item.isSecured) {
+                Icon(
+                    imageVector = Icons.Default.Shield,
+                    contentDescription = stringResource(R.string.cd_shielded_folder),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+
+            if (sizeText != null) {
+                Text(
+                    text = sizeText,
+                    fontSize = 11.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+            if (item.isDirectory && !item.sizeComputed) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(11.dp)
+                )
+            }
+
+            IconButton(
+                onClick = onActionMenuOpen,
+                modifier = Modifier
+                    .size(26.dp)
+                    .testTag("options_${item.name}")
+            ) {
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.cd_menu_actions),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
@@ -1238,6 +1811,235 @@ fun FileDetailsDialog(
     )
 }
 
+/**
+ * Full-screen image preview rendered in a [Dialog]. Hands the local file straight to Coil with
+ * the GIF/animated (ImageDecoder/GifDecoder) and SVG decoders registered, so the platform raster
+ * decoders plus these add-ons cover effectively every decodable format. Anything Coil cannot
+ * decode (e.g. RAW/TIFF without an embedded preview) shows the graceful error slot rather than
+ * crashing. Tapping the scrim, the close button, or the system back gesture dismisses.
+ */
+@Composable
+private fun ImagePreviewDialog(
+    item: FileItem,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components {
+                if (android.os.Build.VERSION.SDK_INT >= 28) {
+                    add(ImageDecoderDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
+                add(SvgDecoder.Factory())
+            }
+            .build()
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.92f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { onDismiss() }
+                .testTag("image_preview_dialog")
+        ) {
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(item.file)
+                    .crossfade(true)
+                    .build(),
+                imageLoader = imageLoader,
+                contentDescription = item.name,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                loading = {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                },
+                error = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BrokenImage,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.image_preview_error),
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(start = 16.dp, end = 8.dp, top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = item.name,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.testTag("image_preview_close")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.cd_close_preview),
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TextPreviewDialog(
+    state: TextPreviewUi,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.92f))
+                .testTag("text_preview_dialog")
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+            ) {
+                // Top bar: filename + close button.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 8.dp, top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = state.item.name,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.testTag("text_preview_close")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(R.string.cd_close_preview),
+                            tint = Color.White
+                        )
+                    }
+                }
+
+                when (state) {
+                    is TextPreviewUi.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+                    }
+                    is TextPreviewUi.Failed -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.85f),
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = stringResource(R.string.text_preview_error),
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                    is TextPreviewUi.Ready -> {
+                        if (state.truncated) {
+                            Text(
+                                text = stringResource(R.string.text_preview_truncated),
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                            )
+                        }
+                        SelectionContainer(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .verticalScroll(rememberScrollState())
+                                .horizontalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = state.text,
+                                color = Color.White,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 13.sp,
+                                softWrap = false
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun DetailRow(label: String, value: String) {
     Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
@@ -1258,6 +2060,9 @@ private fun DetailRow(label: String, value: String) {
 
 fun getIconForFileCategory(item: FileItem): ImageVector {
     if (item.isDirectory) return Icons.Default.Folder
+    when (item.name.substringAfterLast('.', "").lowercase()) {
+        "apk", "apks", "xapk" -> return Icons.Default.Android
+    }
     return when (item.category) {
         "Image" -> Icons.Default.Image
         "Video" -> Icons.Default.Videocam
@@ -1265,6 +2070,94 @@ fun getIconForFileCategory(item: FileItem): ImageVector {
         "Document" -> Icons.Default.Description
         "Archive" -> Icons.Default.FolderZip
         else -> Icons.AutoMirrored.Filled.InsertDriveFile
+    }
+}
+
+/**
+ * Renders a file name keeping both the start and the end visible. Compose's
+ * [TextOverflow.MiddleEllipsis] needs Compose 1.8+, so this composes a head (which ellipsizes at
+ * the end) with a fixed-length tail that is never truncated, e.g. `brahma_muhurta-v…3_1-release.apk`.
+ */
+@Composable
+private fun MiddleEllipsisText(
+    text: String,
+    fontWeight: FontWeight,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    color: Color,
+    modifier: Modifier = Modifier,
+    tailLength: Int = 14
+) {
+    val tail = if (text.length > tailLength + 1) text.takeLast(tailLength) else ""
+    val head = if (tail.isEmpty()) text else text.dropLast(tailLength)
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = head,
+            fontWeight = fontWeight,
+            fontSize = fontSize,
+            color = color,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+        if (tail.isNotEmpty()) {
+            Text(
+                text = tail,
+                fontWeight = fontWeight,
+                fontSize = fontSize,
+                color = color,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
+    }
+}
+
+/**
+ * Loads and shows the launcher icon embedded in an APK. Reads the icon off the main thread via
+ * [android.content.pm.PackageManager.getPackageArchiveInfo]; while loading or if the APK can't be
+ * read (no access / corrupt) it falls back to a generic Android-app vector icon.
+ */
+@Composable
+private fun ApkIcon(
+    apkPath: String,
+    contentDescription: String,
+    fallbackTint: Color
+) {
+    val context = LocalContext.current
+    val bitmap by produceState<ImageBitmap?>(initialValue = null, apkPath) {
+        value = withContext(Dispatchers.IO) {
+            try {
+                val pm = context.packageManager
+                val pkg = pm.getPackageArchiveInfo(apkPath, 0)
+                pkg?.applicationInfo?.let { appInfo ->
+                    appInfo.sourceDir = apkPath
+                    appInfo.publicSourceDir = apkPath
+                    appInfo.loadIcon(pm).toBitmap().asImageBitmap()
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    val loaded = bitmap
+    if (loaded != null) {
+        Image(
+            bitmap = loaded,
+            contentDescription = contentDescription,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(8.dp))
+        )
+    } else {
+        Icon(
+            imageVector = Icons.Default.Android,
+            contentDescription = contentDescription,
+            tint = fallbackTint,
+            modifier = Modifier.size(23.dp)
+        )
     }
 }
 

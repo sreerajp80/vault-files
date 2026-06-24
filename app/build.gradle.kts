@@ -37,8 +37,8 @@ android {
     applicationId = "in.sreerajp.vault_files"
     minSdk = 24
     targetSdk = 36
-    versionCode = 13
-    versionName = "13.2"
+    versionCode = 14
+    versionName = "14.9"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -125,7 +125,9 @@ dependencies {
   // implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
-  // implementation(libs.coil.compose)
+  implementation(libs.coil.compose)
+  implementation(libs.coil.gif)
+  implementation(libs.coil.svg)
   implementation(libs.converter.moshi)
   // implementation(libs.firebase.ai)
   implementation(libs.kotlinx.coroutines.android)

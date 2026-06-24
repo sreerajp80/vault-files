@@ -11,6 +11,20 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
 
+/** A decrypted secure note surfaced to the viewer. [file] is the backing `.securenote` to save into. */
+data class OpenNote(val name: String, val content: String, val file: File)
+
+/** UI state for the full-screen text-file preview; null when no preview is open. */
+sealed interface TextPreviewUi {
+    val item: FileItem
+    /** Read in progress. */
+    data class Loading(override val item: FileItem) : TextPreviewUi
+    /** Content decoded successfully; [truncated] is true when the file exceeded the read cap. */
+    data class Ready(override val item: FileItem, val text: String, val truncated: Boolean) : TextPreviewUi
+    /** Read failed or the content is not displayable as text (e.g. binary). */
+    data class Failed(override val item: FileItem) : TextPreviewUi
+}
+
 class StorageViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = AppDatabase.getDatabase(application)
@@ -25,6 +39,10 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
 
     private val _storageSourceMode = MutableStateFlow("sandbox")
     val storageSourceMode: StateFlow<String> = _storageSourceMode.asStateFlow()
+
+    // Selected Files-explorer layout: "list", "grid", or "compact". Persisted in settings.
+    private val _fileViewMode = MutableStateFlow("list")
+    val fileViewMode: StateFlow<String> = _fileViewMode.asStateFlow()
 
     val userStorageRoot: File
         get() = if (_storageSourceMode.value == "device") {
@@ -85,6 +103,24 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
     private val _passwordProtectHidden = MutableStateFlow(false)
     val passwordProtectHidden: StateFlow<Boolean> = _passwordProtectHidden.asStateFlow()
 
+    // When true, tapping an image file opens the in-app preview; when false images fall back
+    // to the generic "viewing file" message. Defaults to enabled.
+    private val _imagePreviewEnabled = MutableStateFlow(true)
+    val imagePreviewEnabled: StateFlow<Boolean> = _imagePreviewEnabled.asStateFlow()
+
+    /** Image file currently shown in the full-screen preview, or null when none is open. */
+    private val _imagePreview = MutableStateFlow<FileItem?>(null)
+    val imagePreview: StateFlow<FileItem?> = _imagePreview.asStateFlow()
+
+    // When true, tapping a detected text file opens the in-app text viewer; when false text
+    // files fall back to the generic "viewing file" message. Defaults to enabled.
+    private val _textPreviewEnabled = MutableStateFlow(true)
+    val textPreviewEnabled: StateFlow<Boolean> = _textPreviewEnabled.asStateFlow()
+
+    /** Text file currently shown in the full-screen preview, or null when none is open. */
+    private val _textPreview = MutableStateFlow<TextPreviewUi?>(null)
+    val textPreview: StateFlow<TextPreviewUi?> = _textPreview.asStateFlow()
+
     // Flag representing whether hidden files have been unlocked in this active sessions
     private val _isHiddenUnlocked = MutableStateFlow(false)
     val isHiddenUnlocked: StateFlow<Boolean> = _isHiddenUnlocked.asStateFlow()
@@ -114,6 +150,9 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
             _showHiddenItems.value = repository.isShowHiddenItems()
             _passwordProtectApp.value = repository.isPasswordProtectApp()
             _passwordProtectHidden.value = repository.isPasswordProtectHidden()
+            _imagePreviewEnabled.value = repository.isImagePreviewEnabled()
+            _textPreviewEnabled.value = repository.isTextPreviewEnabled()
+            _fileViewMode.value = repository.getFileViewMode()
 
             _currentDirectory.value = userStorageRoot
 
@@ -257,7 +296,7 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
 
     fun createTextFile(name: String, content: String) {
         viewModelScope.launch {
-            val success = repository.createNewTextFile(_currentDirectory.value, name, content)
+            val success = repository.createEncryptedNote(_currentDirectory.value, name, content)
             if (success) {
                 dispatchMessage(string(R.string.msg_file_created, name))
                 loadFilesInDirectory(_currentDirectory.value)
@@ -266,6 +305,88 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
                 dispatchMessage(string(R.string.msg_file_create_failed))
             }
         }
+    }
+
+    /** Decrypted secure note currently shown in the read-only viewer, or null when none is open. */
+    private val _openNote = MutableStateFlow<OpenNote?>(null)
+    val openNote: StateFlow<OpenNote?> = _openNote.asStateFlow()
+
+    fun openNote(item: FileItem) {
+        viewModelScope.launch {
+            val content = repository.readEncryptedNote(item.file)
+            if (content != null) {
+                _openNote.value = OpenNote(item.name, content, item.file)
+            } else {
+                dispatchMessage(string(R.string.msg_note_open_failed))
+            }
+        }
+    }
+
+    fun saveNoteEdits(newContent: String) {
+        val note = _openNote.value ?: return
+        viewModelScope.launch {
+            val success = repository.overwriteEncryptedNote(note.file, newContent)
+            if (success) {
+                _openNote.value = note.copy(content = newContent)
+                dispatchMessage(string(R.string.msg_note_updated))
+                loadFilesInDirectory(_currentDirectory.value)
+                refreshStorageStats()
+            } else {
+                dispatchMessage(string(R.string.msg_note_update_failed))
+            }
+        }
+    }
+
+    /** Deletes a secure note's backing file. Takes file+name directly because the viewer closes
+     *  (clearing [openNote]) before the optional phone-lock confirmation runs. */
+    fun deleteOpenNoteFile(file: File, name: String) {
+        viewModelScope.launch {
+            val success = repository.deleteFile(file)
+            if (success) {
+                dispatchMessage(string(R.string.msg_deleted, name))
+                loadFilesInDirectory(_currentDirectory.value)
+                refreshStorageStats()
+            } else {
+                dispatchMessage(string(R.string.msg_delete_failed, name))
+            }
+        }
+    }
+
+    fun closeNote() {
+        _openNote.value = null
+    }
+
+    // --- Image Preview ---
+
+    fun openImagePreview(item: FileItem) {
+        _imagePreview.value = item
+    }
+
+    fun closeImagePreview() {
+        _imagePreview.value = null
+    }
+
+    // --- Text Preview ---
+
+    /** True if [item] is eligible for the in-app text viewer (extension-based, cheap). */
+    fun isTextPreviewable(item: FileItem): Boolean = repository.isLikelyTextFile(item.file)
+
+    fun openTextPreview(item: FileItem) {
+        _textPreview.value = TextPreviewUi.Loading(item)
+        viewModelScope.launch {
+            val content = repository.readTextFilePreview(item.file)
+            // Ignore the result if the user already dismissed or opened another preview.
+            if (_textPreview.value?.item?.absolutePath != item.absolutePath) return@launch
+            _textPreview.value = if (content != null) {
+                TextPreviewUi.Ready(item, content.text, content.truncated)
+            } else {
+                TextPreviewUi.Failed(item)
+            }
+        }
+    }
+
+    fun closeTextPreview() {
+        _textPreview.value = null
     }
 
     fun deleteFileItem(item: FileItem) {
@@ -435,6 +556,22 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun updateImagePreviewEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.saveImagePreviewEnabled(enabled)
+            _imagePreviewEnabled.value = enabled
+            dispatchMessage(string(if (enabled) R.string.msg_image_preview_enabled else R.string.msg_image_preview_disabled))
+        }
+    }
+
+    fun updateTextPreviewEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.saveTextPreviewEnabled(enabled)
+            _textPreviewEnabled.value = enabled
+            dispatchMessage(string(if (enabled) R.string.msg_text_preview_enabled else R.string.msg_text_preview_disabled))
+        }
+    }
+
     fun updatePasswordProtectHiddenSetting(protect: Boolean) {
         viewModelScope.launch {
             repository.savePasswordProtectHidden(protect)
@@ -445,6 +582,14 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
 
     fun markHiddenUnlockedState(unlocked: Boolean) {
         _isHiddenUnlocked.value = unlocked
+    }
+
+    fun updateFileViewMode(mode: String) {
+        if (_fileViewMode.value == mode) return
+        _fileViewMode.value = mode
+        viewModelScope.launch {
+            repository.saveFileViewMode(mode)
+        }
     }
 
     fun updateStorageSourceMode(mode: String) {

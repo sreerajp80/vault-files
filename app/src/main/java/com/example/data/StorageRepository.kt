@@ -20,6 +20,23 @@ private const val LISTING_CHUNK = 50
 // directories with many subfolders. A final emission is always sent regardless.
 private const val SIZE_EMIT_INTERVAL_MS = 100L
 
+// Upper bound on how many bytes the text previewer reads from a file. Bounds memory and keeps
+// the UI responsive for huge logs; anything larger is shown truncated.
+private const val TEXT_PREVIEW_MAX_BYTES = 512 * 1024
+
+// Generous allowlist of file extensions treated as previewable text. Covers plain text, markup,
+// config/data, logs, and common source code. Files outside this set keep the generic toast.
+private val TEXT_PREVIEW_EXTENSIONS = setOf(
+    "txt", "text", "log", "md", "markdown", "csv", "tsv",
+    "json", "xml", "yaml", "yml", "ini", "cfg", "conf", "properties", "toml", "env",
+    "gradle", "kt", "kts", "java", "js", "ts", "jsx", "tsx", "py", "rb", "go", "rs",
+    "c", "h", "cpp", "hpp", "cs", "php", "sh", "bash", "bat", "ps1", "sql",
+    "html", "htm", "css", "scss", "gitignore", "gitattributes", "lst"
+)
+
+/** Result of a text-file preview read: the (possibly truncated) UTF-8 [text] and a [truncated] flag. */
+data class TextPreviewContent(val text: String, val truncated: Boolean)
+
 class StorageRepository(
     private val context: Context,
     private val settingsDao: SettingsDao,
@@ -30,6 +47,8 @@ class StorageRepository(
     val userStorageRoot: File = File(context.filesDir, "Storage")
     // Safe biometric / PIN file encryption storage
     private val vaultStorageRoot: File = File(context.filesDir, "Vault")
+    // Keystore-backed AES-GCM encryption for secure notes
+    private val cryptoManager = CryptoManager()
 
     init {
         if (!userStorageRoot.exists()) {
@@ -267,7 +286,12 @@ class StorageRepository(
         if (file.isDirectory) return "Folder"
         val ext = file.extension.lowercase()
         return when (ext) {
-            "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg" -> "Image"
+            // Generous image set: standard raster, modern (heic/heif/avif), vector (svg),
+            // icons, and common camera RAW formats. Preview attempts to decode anything here
+            // and degrades gracefully when no decoder is available (e.g. RAW/TIFF).
+            "jpg", "jpeg", "jpe", "jfif", "png", "gif", "webp", "bmp", "svg",
+            "heic", "heif", "avif", "ico", "tif", "tiff",
+            "dng", "cr2", "nef", "arw", "orf", "rw2" -> "Image"
             "mp4", "mkv", "avi", "mov", "3gp", "webm" -> "Video"
             "mp3", "wav", "ogg", "flac", "m4a", "aac" -> "Audio"
             "pdf", "docx", "doc", "txt", "pptx", "xlsx", "epub", "csv", "json" -> "Document"
@@ -343,15 +367,50 @@ class StorageRepository(
         return@withContext newFolder.mkdirs()
     }
 
-    suspend fun createNewTextFile(parentDir: File, name: String, textContent: String): Boolean = withContext(Dispatchers.IO) {
+    /**
+     * Creates a secure note whose content is encrypted at rest with AES-GCM (Android Keystore).
+     * The file is stored with a `.securenote` extension because its bytes are ciphertext, not text.
+     */
+    suspend fun createEncryptedNote(parentDir: File, name: String, textContent: String): Boolean = withContext(Dispatchers.IO) {
         var fileName = name
-        if (!fileName.endsWith(".txt")) {
-            fileName += ".txt"
+        if (!fileName.endsWith(".securenote")) {
+            fileName += ".securenote"
         }
         val newFile = File(parentDir, fileName)
         return@withContext try {
+            val encrypted = cryptoManager.encrypt(textContent.toByteArray())
             FileOutputStream(newFile).use { fos ->
-                fos.write(textContent.toByteArray())
+                fos.write(encrypted)
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    /**
+     * Reads and decrypts a `.securenote` file, returning its plaintext, or `null` if the file is
+     * missing, corrupt, or was sealed with a different (e.g. another device's) Keystore key.
+     */
+    suspend fun readEncryptedNote(file: File): String? = withContext(Dispatchers.IO) {
+        return@withContext try {
+            cryptoManager.decrypt(file.readBytes()).toString(Charsets.UTF_8)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Re-encrypts [content] and overwrites an existing `.securenote` file in place, used when the
+     * user edits a note. Returns false if the file is gone or the write fails.
+     */
+    suspend fun overwriteEncryptedNote(file: File, content: String): Boolean = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val encrypted = cryptoManager.encrypt(content.toByteArray())
+            FileOutputStream(file).use { fos ->
+                fos.write(encrypted)
             }
             true
         } catch (e: Exception) {
@@ -540,12 +599,69 @@ class StorageRepository(
         settingsDao.saveSetting(AppSetting("password_protect_hidden", protect.toString()))
     }
 
+    fun getImagePreviewEnabledFlow(): Flow<AppSetting?> = settingsDao.getSettingFlow("image_preview_enabled")
+    suspend fun isImagePreviewEnabled(): Boolean = withContext(Dispatchers.IO) {
+        return@withContext settingsDao.getSetting("image_preview_enabled")?.value?.toBoolean() ?: true
+    }
+    suspend fun saveImagePreviewEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
+        settingsDao.saveSetting(AppSetting("image_preview_enabled", enabled.toString()))
+    }
+
+    fun getTextPreviewEnabledFlow(): Flow<AppSetting?> = settingsDao.getSettingFlow("text_preview_enabled")
+    suspend fun isTextPreviewEnabled(): Boolean = withContext(Dispatchers.IO) {
+        return@withContext settingsDao.getSetting("text_preview_enabled")?.value?.toBoolean() ?: true
+    }
+    suspend fun saveTextPreviewEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
+        settingsDao.saveSetting(AppSetting("text_preview_enabled", enabled.toString()))
+    }
+
+    /** True if [file]'s extension is in the previewable-text allowlist (cheap, used for tap routing). */
+    fun isLikelyTextFile(file: File): Boolean =
+        !file.isDirectory && file.extension.lowercase() in TEXT_PREVIEW_EXTENSIONS
+
+    /**
+     * Reads up to [TEXT_PREVIEW_MAX_BYTES] from [file] and decodes it as UTF-8 for preview.
+     * Returns null when the read fails or the content looks binary (contains a NUL byte in the
+     * sampled bytes), so the viewer can show a graceful "can't display as text" state.
+     */
+    suspend fun readTextFilePreview(file: File): TextPreviewContent? = withContext(Dispatchers.IO) {
+        try {
+            val totalLength = file.length()
+            val buffer = ByteArray(TEXT_PREVIEW_MAX_BYTES)
+            val read = file.inputStream().use { input ->
+                var off = 0
+                while (off < buffer.size) {
+                    val n = input.read(buffer, off, buffer.size - off)
+                    if (n < 0) break
+                    off += n
+                }
+                off
+            }
+            // Binary guard: a NUL byte in the sampled region almost certainly means non-text.
+            for (i in 0 until read) {
+                if (buffer[i].toInt() == 0) return@withContext null
+            }
+            val text = String(buffer, 0, read, Charsets.UTF_8)
+            TextPreviewContent(text = text, truncated = totalLength > read.toLong())
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun getStorageSourceModeFlow(): Flow<AppSetting?> = settingsDao.getSettingFlow("storage_source_mode")
     suspend fun getStorageSourceMode(): String = withContext(Dispatchers.IO) {
         return@withContext settingsDao.getSetting("storage_source_mode")?.value ?: "sandbox"
     }
     suspend fun saveStorageSourceMode(mode: String) = withContext(Dispatchers.IO) {
         settingsDao.saveSetting(AppSetting("storage_source_mode", mode))
+    }
+
+    fun getFileViewModeFlow(): Flow<AppSetting?> = settingsDao.getSettingFlow("file_view_mode")
+    suspend fun getFileViewMode(): String = withContext(Dispatchers.IO) {
+        return@withContext settingsDao.getSetting("file_view_mode")?.value ?: "list"
+    }
+    suspend fun saveFileViewMode(mode: String) = withContext(Dispatchers.IO) {
+        settingsDao.saveSetting(AppSetting("file_view_mode", mode))
     }
 }
 

@@ -1,6 +1,7 @@
 package com.example
 
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
@@ -88,6 +89,16 @@ class MainActivity : FragmentActivity() {
                     )
                 } else {
                     var activeTabIndex by rememberSaveable { mutableStateOf(1) } // Default to Files explorer tab
+
+                    // Back from any non-main tab returns to the main Files tab rather than closing
+                    // the app. Screen-level handlers (Files folder nav, Settings sub-pages) are
+                    // composed deeper and take priority, so this only fires once a tab has no inner
+                    // navigation left to pop. The Files tab itself leaves this disabled, so back at
+                    // its root falls through and closes the app.
+                    BackHandler(enabled = activeTabIndex != 1) {
+                        viewModel.clearCategoryFilter()
+                        activeTabIndex = 1
+                    }
 
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),

@@ -25,6 +25,9 @@
     <string name="action_modify">പരിഷ്കരിക്കുക</string>
     <string name="action_save_pin">പിൻ സംരക്ഷിക്കുക</string>
     <string name="action_decrypt">ഡീക്രിപ്റ്റ് ചെയ്യുക</string>
+    <string name="action_edit">എഡിറ്റ് ചെയ്യുക</string>
+    <string name="action_update">അപ്ഡേറ്റ് ചെയ്യുക</string>
+    <string name="action_delete">ഇല്ലാതാക്കുക</string>
     <string name="common_yes">അതെ</string>
     <string name="common_no">അല്ല</string>
     <string name="cd_back">പിന്നോട്ട്</string>
@@ -83,6 +86,9 @@
     <string name="sort_date">തീയതി</string>
     <string name="sort_by">%1$s അനുസരിച്ച് അടുക്കുക</string>
     <string name="cd_sort">അടുക്കുക</string>
+    <string name="cd_view_list">പട്ടിക കാഴ്ച</string>
+    <string name="cd_view_grid">ഗ്രിഡ് കാഴ്ച</string>
+    <string name="cd_view_compact">സംക്ഷിപ്ത കാഴ്ച</string>
     <string name="files_filter_chip">%1$s · %2$d</string>
     <string name="cd_clear_filter">ഫിൽട്ടർ മായ്ക്കുക</string>
     <string name="cd_navigate_up">മുകളിലേക്ക്</string>
@@ -101,6 +107,10 @@
     <string name="files_no_category_detail">നിലവിലെ സ്റ്റോറേജ് സ്രോതസ്സിൽ ഈ തരത്തിലുള്ള ഫയലുകളൊന്നുമില്ല.</string>
     <string name="files_empty_folder_detail">ഹെഡറിലെ ബട്ടണുകൾ ഉപയോഗിച്ച് പുതിയ ഫോൾഡറുകൾ സൃഷ്ടിക്കുക അല്ലെങ്കിൽ ടെക്സ്റ്റ് ഫയലുകൾ എഴുതുക.</string>
     <string name="cd_empty_folder">ശൂന്യമായ ഫോൾഡർ</string>
+    <string name="cd_close_preview">പ്രിവ്യൂ അടയ്ക്കുക</string>
+    <string name="image_preview_error">ഈ ചിത്ര ഫോർമാറ്റ് പ്രിവ്യൂ ചെയ്യാനാകില്ല.</string>
+    <string name="text_preview_error">ഈ ഫയൽ ടെക്സ്റ്റായി കാണിക്കാനാകില്ല.</string>
+    <string name="text_preview_truncated">വലിയ ഫയൽ — ആദ്യ ഭാഗം മാത്രം കാണിക്കുന്നു.</string>
     <string name="perm_device_access_title">ഉപകരണ സ്റ്റോറേജ് ആക്സസ് ആവശ്യമാണ്</string>
     <string name="perm_device_access_message">ഈ ഉപകരണത്തിന്റെ സ്റ്റോറേജിലെ ഫയലുകൾ/ഫോൾഡറുകൾ ബ്രൗസ് ചെയ്യാനും പരിശോധിക്കാനും, ആൻഡ്രോയിഡ് സിസ്റ്റം ക്രമീകരണങ്ങളിൽ \'എല്ലാ ഫയൽ ആക്സസും\' സ്വമേധയാ അനുവദിക്കണം.</string>
     <string name="perm_open_storage_settings">സ്റ്റോറേജ് ക്രമീകരണങ്ങൾ തുറക്കുക</string>
@@ -150,7 +160,7 @@
     <string name="dialog_folder_name_label">ഫോൾഡർ പേര്</string>
     <string name="dialog_folder_name_placeholder">ഉദാ. ഇൻവോയ്സുകൾ</string>
     <string name="dialog_new_note_title">പുതിയ സുരക്ഷിത കുറിപ്പുകൾ</string>
-    <string name="dialog_filename_label">ഫയൽനാമം (.txt)</string>
+    <string name="dialog_filename_label">ഫയൽനാമം (.securenote)</string>
     <string name="dialog_filename_placeholder">secret_keys</string>
     <string name="dialog_note_content_label">കുറിപ്പ് ഉള്ളടക്കം</string>
     <string name="dialog_note_content_placeholder">സ്പർശനക്ഷമമായ വിവര വിശദാംശങ്ങൾ…</string>
@@ -199,6 +209,10 @@
 
     <string name="show_hidden_title">മറഞ്ഞ ഫയലുകളും ഫോൾഡറുകളും കാണിക്കുക</string>
     <string name="show_hidden_subtitle">സ്റ്റാൻഡേർഡ് സ്റ്റോറേജ് ലിസ്റ്റിംഗുകളിൽ \".\" കൊണ്ട് തുടങ്ങുന്ന മറഞ്ഞ എൻട്രികൾ വെളിപ്പെടുത്തുക.</string>
+    <string name="image_preview_title">ചിത്ര പ്രിവ്യൂ</string>
+    <string name="image_preview_subtitle">ഒരു ചിത്ര ഫയൽ ടാപ്പ് ചെയ്ത് ആപ്പിനുള്ളിൽ പൂർണ്ണ സ്ക്രീനിൽ കാണുക.</string>
+    <string name="text_preview_title">ടെക്സ്റ്റ് പ്രിവ്യൂ</string>
+    <string name="text_preview_subtitle">ഒരു ടെക്സ്റ്റ് ഫയൽ ടാപ്പ് ചെയ്ത് ആപ്പിനുള്ളിൽ വായിക്കുക.</string>
     <string name="hidden_verify_title">മറഞ്ഞ ഇനങ്ങളുടെ പരിശോധന</string>
     <string name="hidden_verify_subtitle">മറഞ്ഞ ദൃശ്യപരത നില മാറ്റാൻ പ്രാമാണീകരണം ആവശ്യമാണ്.</string>
 
@@ -259,6 +273,9 @@
     <string name="msg_folder_create_failed">ഫോൾഡർ സൃഷ്ടിക്കാനായില്ല. പേര് ഇതിനകം നിലവിലുണ്ടാകാം.</string>
     <string name="msg_file_created">ഫയൽ വിജയകരമായി സൃഷ്ടിച്ചു: %1$s</string>
     <string name="msg_file_create_failed">ഫയൽ സൃഷ്ടിക്കാനായില്ല.</string>
+    <string name="msg_note_open_failed">ഈ കുറിപ്പ് തുറക്കാനായില്ല.</string>
+    <string name="msg_note_updated">കുറിപ്പ് അപ്ഡേറ്റ് ചെയ്തു.</string>
+    <string name="msg_note_update_failed">ഈ കുറിപ്പ് അപ്ഡേറ്റ് ചെയ്യാനായില്ല.</string>
     <string name="msg_deleted">ഇല്ലാതാക്കി: %1$s</string>
     <string name="msg_delete_failed">%1$s ഇല്ലാതാക്കാനായില്ല</string>
     <string name="msg_zip_success">%1$s വിജയകരമായി %2$s-ലേക്ക് സിപ്പ് ചെയ്തു</string>
@@ -281,6 +298,10 @@
     <string name="msg_theme_dark">തീം ഡാർക്കിലേക്ക് മാറ്റി</string>
     <string name="msg_hidden_listed">മറഞ്ഞ ഫയലുകൾ ലിസ്റ്റ് ചെയ്യും</string>
     <string name="msg_hidden_hidden">മറഞ്ഞ ഫയലുകൾ മറയ്ക്കും</string>
+    <string name="msg_image_preview_enabled">ചിത്ര പ്രിവ്യൂ പ്രവർത്തനക്ഷമമാക്കി</string>
+    <string name="msg_image_preview_disabled">ചിത്ര പ്രിവ്യൂ പ്രവർത്തനരഹിതമാക്കി</string>
+    <string name="msg_text_preview_enabled">ടെക്സ്റ്റ് പ്രിവ്യൂ പ്രവർത്തനക്ഷമമാക്കി</string>
+    <string name="msg_text_preview_disabled">ടെക്സ്റ്റ് പ്രിവ്യൂ പ്രവർത്തനരഹിതമാക്കി</string>
     <string name="msg_app_lock_enabled">ആപ്പ് ലോഞ്ച് സുരക്ഷാ ലോക്ക് പ്രവർത്തനക്ഷമമാക്കി</string>
     <string name="msg_app_lock_disabled">ആപ്പ് ലോഞ്ച് സുരക്ഷാ ലോക്ക് പ്രവർത്തനരഹിതമാക്കി</string>
     <string name="msg_hidden_lock_enabled">മറഞ്ഞ ഫയലുകളുടെ സുരക്ഷാ ലോക്ക് പ്രവർത്തനക്ഷമമാക്കി</string>

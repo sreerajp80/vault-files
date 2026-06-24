@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -48,6 +49,8 @@ fun SettingsScreen(
 
     val themePreference by viewModel.themePreference.collectAsState()
     val isShowHiddenOn by viewModel.showHiddenItems.collectAsState()
+    val isImagePreviewOn by viewModel.imagePreviewEnabled.collectAsState()
+    val isTextPreviewOn by viewModel.textPreviewEnabled.collectAsState()
     val isPasswordAppOn by viewModel.passwordProtectApp.collectAsState()
     val isPasswordHiddenOn by viewModel.passwordProtectHidden.collectAsState()
 
@@ -57,6 +60,12 @@ fun SettingsScreen(
 
     // Hub navigation: settings | display | security | about
     var settingsPage by rememberSaveable { mutableStateOf("settings") }
+
+    // Back from a Settings sub-page returns to the hub instead of leaving the tab. On the hub
+    // itself this is disabled, so back falls through to MainActivity's tab handler.
+    BackHandler(enabled = settingsPage != "settings") {
+        settingsPage = "settings"
+    }
 
     // Effective dark mode (correct even when the theme is forced opposite to the system),
     // used to pick a clearly-visible tile/pill border for both palettes.
@@ -249,6 +258,44 @@ fun SettingsScreen(
                                             }
                                         },
                                         modifier = Modifier.testTag("show_hidden_switch")
+                                    )
+                                }
+                            )
+                        }
+
+                        // Image Preview toggle
+                        item {
+                            SettingsTile(
+                                icon = Icons.Default.Image,
+                                title = stringResource(R.string.image_preview_title),
+                                subtitle = stringResource(R.string.image_preview_subtitle),
+                                border = tileBorder,
+                                trailing = {
+                                    Switch(
+                                        checked = isImagePreviewOn,
+                                        onCheckedChange = { newValue ->
+                                            viewModel.updateImagePreviewEnabled(newValue)
+                                        },
+                                        modifier = Modifier.testTag("image_preview_switch")
+                                    )
+                                }
+                            )
+                        }
+
+                        // Text Preview toggle
+                        item {
+                            SettingsTile(
+                                icon = Icons.Default.Description,
+                                title = stringResource(R.string.text_preview_title),
+                                subtitle = stringResource(R.string.text_preview_subtitle),
+                                border = tileBorder,
+                                trailing = {
+                                    Switch(
+                                        checked = isTextPreviewOn,
+                                        onCheckedChange = { newValue ->
+                                            viewModel.updateTextPreviewEnabled(newValue)
+                                        },
+                                        modifier = Modifier.testTag("text_preview_switch")
                                     )
                                 }
                             )
