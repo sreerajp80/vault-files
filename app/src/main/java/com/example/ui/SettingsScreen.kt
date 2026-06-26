@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,6 +80,8 @@ fun SettingsScreen(
     ) {
         if (settingsPage == "about") {
             AboutScreen(onBack = { settingsPage = "settings" }, modifier = Modifier.fillMaxSize())
+        } else if (settingsPage == "permissions") {
+            PermissionsScreen(onBack = { settingsPage = "settings" }, modifier = Modifier.fillMaxSize())
         } else {
             val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             LazyColumn(
@@ -134,24 +137,27 @@ fun SettingsScreen(
                         item { SettingsSectionLabel(stringResource(R.string.settings_section_help), Modifier.padding(top = 12.dp)) }
 
                         item {
-                            Surface(
-                                shape = RoundedCornerShape(18.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant,
+                            SettingsTile(
+                                icon = Icons.AutoMirrored.Filled.HelpOutline,
+                                title = stringResource(R.string.settings_help_title),
+                                subtitle = stringResource(R.string.settings_help_subtitle),
                                 border = tileBorder,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                                    HelpEntry(
-                                        question = stringResource(R.string.help_compression_q),
-                                        answer = stringResource(R.string.help_compression_a)
-                                    )
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
-                                    HelpEntry(
-                                        question = stringResource(R.string.help_securing_q),
-                                        answer = stringResource(R.string.help_securing_a)
-                                    )
-                                }
-                            }
+                                onClick = { settingsPage = "help" },
+                                modifier = Modifier.testTag("help_row"),
+                                trailing = { ChevronTrailing() }
+                            )
+                        }
+
+                        item {
+                            SettingsTile(
+                                icon = Icons.Default.VerifiedUser,
+                                title = stringResource(R.string.settings_permissions_title),
+                                subtitle = stringResource(R.string.settings_permissions_subtitle),
+                                border = tileBorder,
+                                onClick = { settingsPage = "permissions" },
+                                modifier = Modifier.testTag("permissions_row"),
+                                trailing = { ChevronTrailing() }
+                            )
                         }
 
                         item {
@@ -519,6 +525,38 @@ fun SettingsScreen(
                                             Icon(Icons.Default.LockOpen, contentDescription = stringResource(R.string.cd_remove_shield), tint = MaterialTheme.colorScheme.error)
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+
+                    // -------------------------------------------------- HELP --------------------------------------------------
+                    "help" -> {
+                        item {
+                            SettingsSubPageHeader(
+                                title = stringResource(R.string.settings_help_title),
+                                onBack = { settingsPage = "settings" },
+                                border = tileBorder
+                            )
+                        }
+
+                        item {
+                            Surface(
+                                shape = RoundedCornerShape(18.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = tileBorder,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                                    HelpEntry(
+                                        question = stringResource(R.string.help_compression_q),
+                                        answer = stringResource(R.string.help_compression_a)
+                                    )
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                                    HelpEntry(
+                                        question = stringResource(R.string.help_securing_q),
+                                        answer = stringResource(R.string.help_securing_a)
+                                    )
                                 }
                             }
                         }

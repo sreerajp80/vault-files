@@ -89,10 +89,16 @@
     <string name="cd_view_list">List view</string>
     <string name="cd_view_grid">Grid view</string>
     <string name="cd_view_compact">Compact view</string>
+    <string name="cd_files_options">More options</string>
+    <string name="menu_view_type">View Type</string>
+    <string name="menu_sort_by">Sort By</string>
+    <string name="menu_create">Create</string>
+    <string name="create_option_folder">Folder</string>
+    <string name="create_option_secure_note">Secure Note</string>
     <string name="files_filter_chip">%1$s · %2$d</string>
     <string name="cd_clear_filter">Clear filter</string>
     <string name="cd_navigate_up">Up</string>
-    <string name="files_breadcrumb_summary">%1$s · %2$s</string>
+    <string name="files_breadcrumb_summary">%1$s · %2$s · %3$s</string>
     <string name="cd_new_folder">New Folder</string>
     <string name="cd_new_text_file">New Text File</string>
     <string name="files_search_placeholder">Search files and folders</string>
@@ -145,6 +151,64 @@
     <string name="menu_decompress">Decompress ZIP</string>
     <string name="menu_compress">Compress folder/file to ZIP</string>
     <string name="menu_delete">Delete File Item</string>
+    <string name="cd_clear_selection">Clear selection</string>
+    <string name="cd_selected_item">Selected</string>
+    <string name="files_selected_count">%1$d selected</string>
+    <string name="files_selected_count_total">%1$d / %2$d</string>
+    <string name="cd_more_actions">More actions</string>
+    <string name="menu_rename">Rename</string>
+    <string name="menu_share">Share</string>
+    <string name="menu_hide">Hide</string>
+    <string name="menu_create_shortcut">Create shortcut</string>
+    <string name="menu_copy_path">Copy path to clipboard</string>
+    <string name="menu_set_as">Set as</string>
+    <string name="menu_open_with">Open with</string>
+    <string name="menu_open_as">Open as</string>
+    <string name="menu_copy_to">Copy to</string>
+    <string name="menu_move_to">Move to</string>
+    <string name="menu_select_all">Select all</string>
+
+    <!-- Rename dialog -->
+    <string name="rename_dialog_title">Rename</string>
+    <string name="rename_dialog_label">New name</string>
+
+    <!-- Open-as dialog -->
+    <string name="open_as_dialog_title">Open as</string>
+    <string name="open_as_text">Text file</string>
+    <string name="open_as_image">Image file</string>
+    <string name="open_as_audio">Audio file</string>
+    <string name="open_as_video">Video file</string>
+    <string name="open_as_other">Other file</string>
+
+    <!-- Copy/Move folder picker -->
+    <string name="picker_copy_title">Copy to</string>
+    <string name="picker_move_title">Move to</string>
+    <string name="picker_root_app">App storage</string>
+    <string name="picker_root_device">Device storage</string>
+    <string name="picker_copy_here">Copy here</string>
+    <string name="picker_move_here">Move here</string>
+    <string name="picker_empty">No subfolders here</string>
+    <string name="picker_device_permission">Grant all-files access to browse device storage.</string>
+
+    <!-- Confirmation dialog -->
+    <string name="confirm_generic_title">Confirm</string>
+    <string name="confirm_share">Share %1$s?</string>
+    <string name="confirm_share_multi">Share %1$d items?</string>
+    <string name="confirm_hide">Hide %1$s? It will be renamed to start with a dot and stay hidden unless \"Show Hidden Files\" is on.</string>
+    <string name="confirm_hide_multi">Hide %1$d items? They will be renamed to start with a dot.</string>
+    <string name="confirm_unhide">Unhide %1$s? The leading dot will be removed.</string>
+    <string name="confirm_create_shortcut">Create a home-screen shortcut for %1$s?</string>
+    <string name="confirm_copy_path">Copy the full path of %1$s to the clipboard?</string>
+    <string name="confirm_set_as">Set %1$s as… (wallpaper, contact photo, etc.)?</string>
+    <string name="confirm_open_with">Open %1$s with another app?</string>
+    <string name="confirm_select_all">Select all items in this folder?</string>
+    <string name="confirm_compress">Compress %1$s to a ZIP archive?</string>
+    <string name="confirm_compress_multi">Compress %1$d items to a ZIP archive?</string>
+    <string name="confirm_decompress">Extract %1$s into a new folder?</string>
+    <string name="confirm_lock_folder">Lock and secure %1$s? It will require identity verification to open.</string>
+    <string name="confirm_remove_shield">Remove the secure shield from %1$s?</string>
+    <string name="confirm_move_vault_action">Move %1$s into the biometric vault?</string>
+    <string name="confirm_move_vault_action_multi">Move %1$d files into the biometric vault?</string>
 
     <!-- File details dialog -->
     <string name="detail_type">Type</string>
@@ -154,6 +218,10 @@
     <string name="detail_modified">Modified</string>
     <string name="detail_secured">Secured</string>
     <string name="detail_folder">Folder</string>
+    <string name="detail_count">Count</string>
+    <string name="detail_files">Files</string>
+    <string name="detail_folders">Folders</string>
+    <string name="detail_files_and_folders">Files and folders</string>
 
     <!-- Create folder / file / zip dialogs -->
     <string name="dialog_create_folder_title">Create New Folder</string>
@@ -172,8 +240,10 @@
     <string name="unlock_folder_subtitle">Please authenticate to view the shielded contents of \'%1$s\'</string>
     <string name="confirm_move_title">Confirm Move Lock</string>
     <string name="confirm_move_subtitle">Secure verification is enabled. Authenticate to move \'%1$s\' securely into the vault.</string>
+    <string name="confirm_move_subtitle_multi">Secure verification is enabled. Authenticate to move %1$d selected items securely into the vault.</string>
     <string name="confirm_delete_title">Confirm Deletion Lock</string>
     <string name="confirm_delete_subtitle">Secure verification is enabled. Authenticate to delete \'%1$s\'</string>
+    <string name="confirm_delete_subtitle_multi">Secure verification is enabled. Authenticate to delete %1$d selected items.</string>
     <string name="auth_passcode_title">Security Passcode verification</string>
     <string name="auth_enter_app_pin">Enter App PIN</string>
     <string name="auth_incorrect_passcode">Incorrect passcode. Try again.</string>
@@ -191,6 +261,21 @@
     <string name="settings_security_subtitle">Passcode, app lock &amp; data protection</string>
     <string name="settings_about_title">About Vault Files</string>
     <string name="settings_about_subtitle">Author, build details &amp; app info</string>
+    <string name="settings_help_title">Help &amp; Information</string>
+    <string name="settings_help_subtitle">Compression, securing &amp; common questions</string>
+    <string name="settings_permissions_title">Permissions</string>
+    <string name="settings_permissions_subtitle">Permissions this app uses</string>
+    <string name="permissions_title">App Permissions</string>
+    <string name="permissions_intro">These are the permissions used by Vault Files, including the ones it declares directly and those added by libraries it depends on.</string>
+    <string name="permissions_section_declared">Declared by this app</string>
+    <string name="permissions_section_implicit">Added by libraries &amp; system</string>
+    <string name="permissions_status_granted">Granted</string>
+    <string name="permissions_status_denied">Not granted</string>
+    <string name="permissions_empty">No permission information available</string>
+    <string name="perm_read_storage">Read storage</string>
+    <string name="perm_write_storage">Write storage</string>
+    <string name="perm_manage_storage">Manage all files</string>
+    <string name="perm_install_packages">Request app installs</string>
     <string name="help_compression_q">How compression works?</string>
     <string name="help_compression_a">Tap on \'Compress to ZIP\' in file options. A standard compressed folder is synthesized beside the source, saving size. Decompress by clicking any .zip directly.</string>
     <string name="help_securing_q">What is folder securing?</string>
@@ -279,6 +364,7 @@
     <string name="msg_deleted">Deleted: %1$s</string>
     <string name="msg_delete_failed">Could not delete %1$s</string>
     <string name="msg_zip_success">Successfully zipped %1$s into %2$s</string>
+    <string name="msg_zip_success_multi">Compressed %1$d items into %2$s</string>
     <string name="msg_zip_failed">Failed to create zip archive.</string>
     <string name="msg_extract_success">Successfully extracted contents of %1$s</string>
     <string name="msg_extract_failed">Failed to extract zip archive.</string>
@@ -310,17 +396,42 @@
     <string name="msg_source_sandbox">Switched storage source to App Sandbox</string>
     <string name="msg_cannot_launch_settings_files">Could not launch system settings. Please grant files permission manually.</string>
     <string name="msg_cannot_launch_settings">Could not launch settings. Please activate permission manually.</string>
-    <string name="msg_viewing_file">Viewing: %1$s (%2$s)</string>
+    <string name="msg_viewing_file">%1$s (%2$s)</string>
+    <string name="msg_no_app_to_open">No app found to open %1$s</string>
+    <string name="msg_open_failed">Could not open %1$s</string>
+    <string name="msg_install_permission_needed">Allow this app to install apps, then tap the APK again.</string>
+    <string name="msg_install_failed">Could not start installer for %1$s</string>
     <string name="msg_configure_pin_tab">Please configure security passcode PIN in settings tab.</string>
     <string name="msg_configure_pin_settings">Please configure security passcode PIN in settings.</string>
     <string name="msg_pin_required_protection">PIN configuration required before enabling protection.</string>
     <string name="msg_setup_pin_fallback">Setup app security PIN in settings for fallback passcode.</string>
     <string name="msg_vault_requires_pin">Vault lock requires a security PIN fallback setup. See settings.</string>
+    <string name="msg_renamed">Renamed %1$s to %2$s</string>
+    <string name="msg_rename_failed">Could not rename %1$s (name in use or invalid)</string>
+    <string name="msg_hidden">Hid %1$d item(s)</string>
+    <string name="msg_unhidden">Un-hid %1$d item(s)</string>
+    <string name="msg_hidden_mixed">Hid %1$d and un-hid %2$d item(s)</string>
+    <string name="msg_hide_failed">Could not change hidden state</string>
+    <string name="msg_copied">Copied %1$d item(s) to %2$s</string>
+    <string name="msg_copy_failed">Could not copy (name may already exist at destination)</string>
+    <string name="msg_moved">Moved %1$d item(s) to %2$s</string>
+    <string name="msg_move_failed">Could not move (name may already exist at destination)</string>
+    <string name="msg_path_copied">Path copied to clipboard</string>
+    <string name="msg_shortcut_created">Shortcut request sent for %1$s</string>
+    <string name="msg_shortcut_unsupported">This launcher does not support pinned shortcuts</string>
+    <string name="msg_cannot_share_folder">Folders cannot be shared</string>
+    <string name="msg_share_failed">Could not share %1$s</string>
+    <string name="msg_set_as_failed">Could not set %1$s</string>
+    <string name="msg_set_as_image_only">Only image files can be set as wallpaper or photo</string>
 
     <!-- ===== Plurals ===== -->
     <plurals name="folder_count">
         <item quantity="one">%1$d folder</item>
         <item quantity="other">%1$d folders</item>
+    </plurals>
+    <plurals name="file_count">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
     </plurals>
     <plurals name="item_count">
         <item quantity="one">%1$d item</item>

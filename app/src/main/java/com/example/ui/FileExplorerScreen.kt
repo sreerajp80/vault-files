@@ -1,17 +1,28 @@
 package com.example.ui
 
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.webkit.MimeTypeMap
+import androidx.core.content.FileProvider
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -28,12 +39,14 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +84,7 @@ import com.example.utils.BiometricHelper
 import `in`.sreerajp.vault_files.R
 import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -94,6 +108,13 @@ enum class FileViewMode(
     companion object {
         fun fromKey(key: String): FileViewMode = values().firstOrNull { it.storageKey == key } ?: LIST
     }
+}
+
+/** Actions emitted by the selection toolbar / overflow menu, handled by the screen. */
+enum class SelectionAction {
+    DELETE, INFO, RENAME, SHARE, HIDE, CREATE_SHORTCUT, COPY_PATH, SET_AS,
+    OPEN_WITH, OPEN_AS, COPY_TO, MOVE_TO, COMPRESS, EXTRACT, SHIELD_TOGGLE,
+    MOVE_VAULT, SELECT_ALL
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,23 +166,52 @@ fun FileExplorerScreen(
     val shouldShowHiddenUnlockBanner = showHiddenItems && passwordProtectHidden && !isHiddenUnlocked
 
     // Dialog trigger states
-    var showCreateFolderDialog by remember { mutableStateOf(false) }
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var showViewTypeDialog by remember { mutableStateOf(false) }
+    var showSortByDialog by remember { mutableStateOf(false) }
     var showCreateFileDialog by remember { mutableStateOf(false) }
-    var showZipDialogForFile by remember { mutableStateOf<FileItem?>(null) }
+    var showZipDialogForItems by remember { mutableStateOf<List<FileItem>?>(null) }
     var activeActionPendingValidation by remember { mutableStateOf<PendingAction?>(null) }
+    // Selection-menu dialog states.
+    var pendingConfirm by remember { mutableStateOf<ConfirmSpec?>(null) }
+    var renameTarget by remember { mutableStateOf<FileItem?>(null) }
+    var openAsTarget by remember { mutableStateOf<FileItem?>(null) }
+    var moveCopyRequest by remember { mutableStateOf<MoveCopyRequest?>(null) }
 
-    // Dropdown state for contextual action menus
-    var expandedMenuForFileItem by remember { mutableStateOf<FileItem?>(null) }
+    // Multi-select state: absolute paths of items the user has long-pressed to select. While
+    // non-empty the screen is in "selection mode" and the search field is replaced by a
+    // contextual action toolbar.
+    var selectedPaths by remember { mutableStateOf(setOf<String>()) }
     var showDetailsForFileItem by remember { mutableStateOf<FileItem?>(null) }
+    var showDetailsForSelection by remember { mutableStateOf<List<FileItem>?>(null) }
 
     // Screen-local search + sort state (client-side over the loaded directory list)
     var searchQuery by remember { mutableStateOf("") }
     var sortMode by remember { mutableStateOf(FileSortMode.NAME) }
-    var sortMenuExpanded by remember { mutableStateOf(false) }
+    var optionsMenuExpanded by remember { mutableStateOf(false) }
 
     val isAtRoot = currentDir.absolutePath == viewModel.userStorageRoot.absolutePath
     val needsPermission = storageSourceMode == "device" && !hasPermission
     val isCategoryFiltered = activeCategoryFilter != null
+
+    // Pull-to-refresh: the ViewModel's load functions are fire-and-forget (they launch their
+    // own jobs), so the screen drives this flag directly — set true on pull, cleared after a
+    // short delay so the spinner stays visible briefly while the reload runs.
+    val refreshScope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val onRefresh: () -> Unit = {
+        isRefreshing = true
+        if (isCategoryFiltered) {
+            viewModel.loadCategoryFilteredFiles()
+        } else {
+            viewModel.loadFilesInDirectory(currentDir)
+        }
+        viewModel.refreshStorageStats()
+        refreshScope.launch {
+            delay(600)
+            isRefreshing = false
+        }
+    }
 
     // Intercept the system back gesture/button while there's somewhere to go within the explorer:
     // clear an active category filter first, otherwise navigate to the parent folder. When at the
@@ -178,6 +228,32 @@ fun FileExplorerScreen(
     // it's the current directory listing.
     val baseList = if (isCategoryFiltered) categoryFilteredFiles else filesList
 
+    // Selection derived from [selectedPaths]: the actual FileItems still present in the list
+    // (stale paths drop out automatically after a refresh).
+    val selectionMode = selectedPaths.isNotEmpty()
+    val selectedItems = remember(baseList, selectedPaths) {
+        baseList.filter { it.absolutePath in selectedPaths }
+    }
+    val toggleSelection: (FileItem) -> Unit = { item ->
+        selectedPaths = if (item.absolutePath in selectedPaths) {
+            selectedPaths - item.absolutePath
+        } else {
+            selectedPaths + item.absolutePath
+        }
+    }
+
+    // Leaving the current directory or changing the category filter clears the selection, since
+    // the selected items are no longer on screen.
+    LaunchedEffect(currentDir, activeCategoryFilter) {
+        selectedPaths = emptySet()
+    }
+
+    // While in selection mode, system Back exits selection first (takes priority over the
+    // category/navigate-up handler above because it is registered later).
+    BackHandler(enabled = selectionMode) {
+        selectedPaths = emptySet()
+    }
+
     val displayedFiles = remember(baseList, searchQuery, sortMode) {
         val filtered = if (searchQuery.isBlank()) {
             baseList
@@ -193,6 +269,7 @@ fun FileExplorerScreen(
     }
 
     val folderCount = filesList.count { it.isDirectory }
+    val fileCount = filesList.count { !it.isDirectory }
     val totalSize = baseList.sumOf { it.size }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -246,80 +323,145 @@ fun FileExplorerScreen(
                                     )
                                 }
                             }
-                        } else {
-                            Row(
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .then(
-                                        if (!isAtRoot) Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable { viewModel.navigateUp() }
-                                        else Modifier
-                                    )
-                                    .testTag("files_breadcrumb"),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(5.dp)
-                            ) {
-                                if (!isAtRoot) {
-                                    Icon(
-                                        Icons.Default.ChevronLeft,
-                                        contentDescription = stringResource(R.string.cd_navigate_up),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                                Text(
-                                    text = getDisplayPath(viewModel.userStorageRoot, currentDir),
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 12.5.sp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                                Icon(
-                                    Icons.Default.ChevronRight,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.outline,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = stringResource(
-                                        R.string.files_breadcrumb_summary,
-                                        pluralStringResource(R.plurals.folder_count, folderCount, folderCount),
-                                        formatBytes(totalSize)
-                                    ),
-                                    fontSize = 12.5.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
                         }
-                    }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                        HeaderActionButton(
-                            icon = Icons.Default.CreateNewFolder,
-                            contentDescription = stringResource(R.string.cd_new_folder),
-                            filled = false,
-                            onClick = { showCreateFolderDialog = true }
-                        )
-                        HeaderActionButton(
-                            icon = Icons.AutoMirrored.Filled.NoteAdd,
-                            contentDescription = stringResource(R.string.cd_new_text_file),
-                            filled = true,
-                            onClick = { showCreateFileDialog = true }
-                        )
+                        // Non-filtered breadcrumb (path + folder count + size) is rendered
+                        // on the options/dot-menu row below as a two-line block.
                     }
                 }
 
-                // ---------------- Search field ----------------
-                if (!needsPermission) {
+                // ---------------- Source pills ----------------
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                        .testTag("files_storage_source_card"),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SourcePill(
+                        selected = storageSourceMode == "sandbox",
+                        icon = Icons.Default.GridView,
+                        label = stringResource(R.string.source_app_sandbox),
+                        onClick = { viewModel.updateStorageSourceMode("sandbox") },
+                        modifier = Modifier.weight(1f).testTag("files_select_sandbox_chip")
+                    )
+                    SourcePill(
+                        selected = storageSourceMode == "device",
+                        icon = Icons.Default.PhoneAndroid,
+                        label = stringResource(R.string.source_entire_device),
+                        onClick = { viewModel.updateStorageSourceMode("device") },
+                        modifier = Modifier.weight(1f).testTag("files_select_device_chip")
+                    )
+                }
+
+                // ---------------- Search field / selection toolbar ----------------
+                if (!needsPermission && selectionMode) {
+                    // Single handler for every selection action. Actions that have their own dialog
+                    // (rename / open-as / copy / move / compress) open it directly; the rest are gated
+                    // by a generic OK/Cancel confirmation dialog (pendingConfirm) so every action is
+                    // confirmed before it runs. Delete / Move-to-Vault keep their phone-lock
+                    // validation, which itself serves as the confirmation when enabled.
+                    val clear = { selectedPaths = emptySet() }
+                    val onSelectionAction: (SelectionAction) -> Unit = handler@{ action ->
+                        val items = selectedItems
+                        if (items.isEmpty()) return@handler
+                        val single = items.singleOrNull()
+                        when (action) {
+                            SelectionAction.INFO -> {
+                                if (items.size == 1) showDetailsForFileItem = items.first()
+                                else showDetailsForSelection = items
+                            }
+                            SelectionAction.RENAME -> { renameTarget = single }
+                            SelectionAction.OPEN_AS -> { openAsTarget = single }
+                            SelectionAction.COPY_TO -> { moveCopyRequest = MoveCopyRequest(items, isMove = false) }
+                            SelectionAction.MOVE_TO -> { moveCopyRequest = MoveCopyRequest(items, isMove = true) }
+                            SelectionAction.COMPRESS -> { showZipDialogForItems = items }
+                            SelectionAction.DELETE -> {
+                                val runDelete = { items.forEach { viewModel.deleteFileItem(it) }; clear() }
+                                if (isPhoneLockDeleteEnabled) {
+                                    activeActionPendingValidation = PendingAction(
+                                        title = context.getString(R.string.confirm_delete_title),
+                                        subtitle = if (items.size == 1) context.getString(R.string.confirm_delete_subtitle, items.first().name)
+                                            else context.getString(R.string.confirm_delete_subtitle_multi, items.size),
+                                        onValidated = { items.forEach { viewModel.deleteFileItem(it) }; clear() }
+                                    )
+                                } else {
+                                    pendingConfirm = ConfirmSpec(
+                                        message = if (items.size == 1) context.getString(R.string.confirm_delete_subtitle, items.first().name)
+                                            else context.getString(R.string.confirm_delete_subtitle_multi, items.size),
+                                        onConfirm = runDelete
+                                    )
+                                }
+                            }
+                            SelectionAction.MOVE_VAULT -> {
+                                val runMove = { items.forEach { viewModel.secureFileInVault(it) }; clear() }
+                                if (isPhoneLockDeleteEnabled) {
+                                    activeActionPendingValidation = PendingAction(
+                                        title = context.getString(R.string.confirm_move_title),
+                                        subtitle = if (items.size == 1) context.getString(R.string.confirm_move_subtitle, items.first().name)
+                                            else context.getString(R.string.confirm_move_subtitle_multi, items.size),
+                                        onValidated = { items.forEach { viewModel.secureFileInVault(it) }; clear() }
+                                    )
+                                } else {
+                                    pendingConfirm = ConfirmSpec(
+                                        message = if (items.size == 1) context.getString(R.string.confirm_move_vault_action, items.first().name)
+                                            else context.getString(R.string.confirm_move_vault_action_multi, items.size),
+                                        onConfirm = runMove
+                                    )
+                                }
+                            }
+                            SelectionAction.EXTRACT -> pendingConfirm = ConfirmSpec(
+                                message = context.getString(R.string.confirm_decompress, single?.name ?: ""),
+                                onConfirm = { single?.let { viewModel.decompressZip(it) }; clear() }
+                            )
+                            SelectionAction.SHIELD_TOGGLE -> {
+                                val secured = items.all { it.isSecured }
+                                pendingConfirm = ConfirmSpec(
+                                    message = context.getString(
+                                        if (secured) R.string.confirm_remove_shield else R.string.confirm_lock_folder,
+                                        single?.name ?: "${items.size}"
+                                    ),
+                                    onConfirm = { items.forEach { viewModel.toggleFolderShield(it) }; clear() }
+                                )
+                            }
+                            SelectionAction.SHARE -> { shareItems(context, items, viewModel); clear() }
+                            SelectionAction.HIDE -> {
+                                val unhide = single != null && single.name.startsWith(".")
+                                pendingConfirm = ConfirmSpec(
+                                    message = when {
+                                        unhide -> context.getString(R.string.confirm_unhide, single!!.name)
+                                        items.size == 1 -> context.getString(R.string.confirm_hide, items.first().name)
+                                        else -> context.getString(R.string.confirm_hide_multi, items.size)
+                                    },
+                                    onConfirm = { viewModel.hideOrUnhideItems(items); clear() }
+                                )
+                            }
+                            SelectionAction.CREATE_SHORTCUT -> pendingConfirm = ConfirmSpec(
+                                message = context.getString(R.string.confirm_create_shortcut, single?.name ?: ""),
+                                onConfirm = { single?.let { createPinnedShortcut(context, it, viewModel) }; clear() }
+                            )
+                            SelectionAction.COPY_PATH -> { copyPathToClipboard(context, items, viewModel); clear() }
+                            SelectionAction.SET_AS -> pendingConfirm = ConfirmSpec(
+                                message = context.getString(R.string.confirm_set_as, single?.name ?: ""),
+                                onConfirm = { single?.let { setAsImage(context, it, viewModel) }; clear() }
+                            )
+                            SelectionAction.OPEN_WITH -> { single?.let { openWithChooser(context, it, viewModel) }; clear() }
+                            SelectionAction.SELECT_ALL -> pendingConfirm = ConfirmSpec(
+                                message = context.getString(R.string.confirm_select_all),
+                                onConfirm = { selectedPaths = baseList.map { it.absolutePath }.toSet() }
+                            )
+                        }
+                    }
+                    SelectionToolbar(
+                        selectedItems = selectedItems,
+                        modifier = Modifier.padding(top = 12.dp),
+                        onClear = clear,
+                        onAction = onSelectionAction
+                    )
+                } else if (!needsPermission) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp)
+                            .padding(top = 12.dp)
                             .testTag("files_search_field"),
                         shape = RoundedCornerShape(15.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -369,30 +511,6 @@ fun FileExplorerScreen(
                             }
                         }
                     }
-                }
-
-                // ---------------- Source pills ----------------
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp)
-                        .testTag("files_storage_source_card"),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SourcePill(
-                        selected = storageSourceMode == "sandbox",
-                        icon = Icons.Default.GridView,
-                        label = stringResource(R.string.source_app_sandbox),
-                        onClick = { viewModel.updateStorageSourceMode("sandbox") },
-                        modifier = Modifier.weight(1f).testTag("files_select_sandbox_chip")
-                    )
-                    SourcePill(
-                        selected = storageSourceMode == "device",
-                        icon = Icons.Default.PhoneAndroid,
-                        label = stringResource(R.string.source_entire_device),
-                        onClick = { viewModel.updateStorageSourceMode("device") },
-                        modifier = Modifier.weight(1f).testTag("files_select_device_chip")
-                    )
                 }
             }
 
@@ -449,74 +567,116 @@ fun FileExplorerScreen(
                 }
             }
 
-            // ---------------- Section header + sort control ----------------
+            // ---------------- Section header + options (view/sort) menu ----------------
             if (!needsPermission) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 22.dp, end = 22.dp, top = 6.dp, bottom = 8.dp),
+                        .padding(start = 22.dp, end = 10.dp, top = 6.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = if (isCategoryFiltered) stringResource(R.string.files_all_category_header, categoryDisplayLabel(activeCategoryFilter).uppercase()) else stringResource(R.string.files_all_items),
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.6.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                    ViewModeToggle(
-                        current = fileViewMode,
-                        onSelect = { viewModel.updateFileViewMode(it.storageKey) }
-                    )
-                    Box {
-                        Row(
+                    if (isCategoryFiltered) {
+                        Text(
+                            text = stringResource(R.string.files_all_category_header, categoryDisplayLabel(activeCategoryFilter).uppercase()),
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.6.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        // Two-line breadcrumb: line 1 = path, line 2 = folder count · size.
+                        Column(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { sortMenuExpanded = true }
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                                .testTag("files_sort_control"),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                .weight(1f)
+                                .then(
+                                    if (!isAtRoot) Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { viewModel.navigateUp() }
+                                    else Modifier
+                                )
+                                .testTag("files_breadcrumb")
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (!isAtRoot) {
+                                    Icon(
+                                        Icons.Default.ChevronLeft,
+                                        contentDescription = stringResource(R.string.cd_navigate_up),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Text(
+                                    text = getDisplayPath(viewModel.userStorageRoot, currentDir),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.5.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                            }
+                            Text(
+                                text = stringResource(
+                                    R.string.files_breadcrumb_summary,
+                                    pluralStringResource(R.plurals.folder_count, folderCount, folderCount),
+                                    pluralStringResource(R.plurals.file_count, fileCount, fileCount),
+                                    formatBytes(totalSize)
+                                ),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    if (!selectionMode) Box {
+                        IconButton(
+                            onClick = { optionsMenuExpanded = true },
+                            modifier = Modifier.testTag("files_options_menu")
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Filled.Sort,
-                                contentDescription = stringResource(R.string.cd_sort),
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Text(
-                                text = stringResource(sortMode.labelRes),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.cd_files_options),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         DropdownMenu(
-                            expanded = sortMenuExpanded,
-                            onDismissRequest = { sortMenuExpanded = false }
+                            expanded = optionsMenuExpanded,
+                            onDismissRequest = { optionsMenuExpanded = false }
                         ) {
-                            FileSortMode.values().forEach { mode ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.sort_by, stringResource(mode.labelRes))) },
-                                    onClick = {
-                                        sortMode = mode
-                                        sortMenuExpanded = false
-                                    },
-                                    leadingIcon = {
-                                        if (sortMode == mode) {
-                                            Icon(Icons.Default.Check, contentDescription = null)
-                                        }
-                                    },
-                                    modifier = Modifier.testTag("files_sort_${mode.name.lowercase()}")
-                                )
-                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.menu_view_type)) },
+                                onClick = {
+                                    optionsMenuExpanded = false
+                                    showViewTypeDialog = true
+                                },
+                                leadingIcon = { Icon(fileViewMode.icon, contentDescription = null) },
+                                modifier = Modifier.testTag("files_menu_view_type")
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.menu_sort_by)) },
+                                onClick = {
+                                    optionsMenuExpanded = false
+                                    showSortByDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null) },
+                                modifier = Modifier.testTag("files_menu_sort_by")
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.menu_create)) },
+                                onClick = {
+                                    optionsMenuExpanded = false
+                                    showCreateDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
+                                modifier = Modifier.testTag("files_menu_create")
+                            )
                         }
-                    }
                     }
                 }
             }
@@ -595,12 +755,22 @@ fun FileExplorerScreen(
                             Text(stringResource(R.string.perm_open_storage_settings))
                         }
                     }
-                } else if (isCategoryFiltered && isCategoryLoading) {
+                } else {
+                  // Pull-to-refresh wraps every non-permission state (lists, empty, and the
+                  // category-scanning state) so the drag-down gesture reloads the current folder
+                  // or category from any of them.
+                  PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier.fillMaxSize()
+                  ) {
+                    if (isCategoryFiltered && isCategoryLoading) {
                     // Scanning state: the recursive category walk is still running. Show a
                     // spinner rather than the previous category's stale list or an empty state.
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
                             .padding(24.dp)
                             .testTag("category_filter_loading_state"),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -619,6 +789,7 @@ fun FileExplorerScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
                             .padding(24.dp)
                             .testTag("empty_explorer_state"),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -698,7 +869,10 @@ fun FileExplorerScreen(
                                     FileGridItem(
                                         item = item,
                                         onItemClick = { handleItemClick(item) },
-                                        onActionMenuOpen = { expandedMenuForFileItem = item },
+                                        onToggleSelection = { toggleSelection(item) },
+                                        onOpenExternal = { openFileExternally(context, item, viewModel) },
+                                        selectionMode = selectionMode,
+                                        isSelected = item.absolutePath in selectedPaths,
                                         isSecuredLocked = item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)
                                     )
                                 }
@@ -716,7 +890,10 @@ fun FileExplorerScreen(
                                     FileCompactRow(
                                         item = item,
                                         onItemClick = { handleItemClick(item) },
-                                        onActionMenuOpen = { expandedMenuForFileItem = item },
+                                        onToggleSelection = { toggleSelection(item) },
+                                        onOpenExternal = { openFileExternally(context, item, viewModel) },
+                                        selectionMode = selectionMode,
+                                        isSelected = item.absolutePath in selectedPaths,
                                         isSecuredLocked = item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)
                                     )
                                 }
@@ -734,67 +911,20 @@ fun FileExplorerScreen(
                                     FileRowItem(
                                         item = item,
                                         onItemClick = { handleItemClick(item) },
-                                        onActionMenuOpen = { expandedMenuForFileItem = item },
+                                        onToggleSelection = { toggleSelection(item) },
+                                        onOpenExternal = { openFileExternally(context, item, viewModel) },
+                                        selectionMode = selectionMode,
+                                        isSelected = item.absolutePath in selectedPaths,
                                         isSecuredLocked = item.isSecured && !unlockedFolderSessions.contains(item.absolutePath)
                                     )
                                 }
                             }
                         }
                     }
+                    }
+                  }
                 }
             }
-        }
-
-        // --- Floating Action Dropdowns for items ---
-        expandedMenuForFileItem?.let { selectedItem ->
-            CardItemMenu(
-                item = selectedItem,
-                onDismiss = { expandedMenuForFileItem = null },
-                onDetailsClick = {
-                    showDetailsForFileItem = selectedItem
-                    expandedMenuForFileItem = null
-                },
-                onZipClick = {
-                    showZipDialogForFile = selectedItem
-                    expandedMenuForFileItem = null
-                },
-                onExtractClick = {
-                    viewModel.decompressZip(selectedItem)
-                    expandedMenuForFileItem = null
-                },
-                onShieldToggle = {
-                    viewModel.toggleFolderShield(selectedItem)
-                    expandedMenuForFileItem = null
-                },
-                onEncryptToVault = {
-                    expandedMenuForFileItem = null
-                    if (isPhoneLockDeleteEnabled) {
-                        activeActionPendingValidation = PendingAction(
-                            title = context.getString(R.string.confirm_move_title),
-                            subtitle = context.getString(R.string.confirm_move_subtitle, selectedItem.name),
-                            onValidated = {
-                                viewModel.secureFileInVault(selectedItem)
-                            }
-                        )
-                    } else {
-                        viewModel.secureFileInVault(selectedItem)
-                    }
-                },
-                onDeleteClick = {
-                    expandedMenuForFileItem = null
-                    if (isPhoneLockDeleteEnabled) {
-                        activeActionPendingValidation = PendingAction(
-                            title = context.getString(R.string.confirm_delete_title),
-                            subtitle = context.getString(R.string.confirm_delete_subtitle, selectedItem.name),
-                            onValidated = {
-                                viewModel.deleteFileItem(selectedItem)
-                            }
-                        )
-                    } else {
-                        viewModel.deleteFileItem(selectedItem)
-                    }
-                }
-            )
         }
 
         // --- File/Folder Details Dialog ---
@@ -802,6 +932,85 @@ fun FileExplorerScreen(
             FileDetailsDialog(
                 item = detailsItem,
                 onDismiss = { showDetailsForFileItem = null }
+            )
+        }
+
+        // --- Multi-selection Details Dialog ---
+        showDetailsForSelection?.let { detailsItems ->
+            SelectionDetailsDialog(
+                items = detailsItems,
+                onDismiss = { showDetailsForSelection = null }
+            )
+        }
+
+        // --- Generic confirmation dialog (gates every action without its own dialog) ---
+        pendingConfirm?.let { spec ->
+            ConfirmActionDialog(
+                message = spec.message,
+                onConfirm = {
+                    val run = spec.onConfirm
+                    pendingConfirm = null
+                    run()
+                },
+                onDismiss = { pendingConfirm = null }
+            )
+        }
+
+        // --- Rename dialog ---
+        renameTarget?.let { target ->
+            RenameDialog(
+                item = target,
+                onConfirm = { newName ->
+                    viewModel.renameFileItem(target, newName)
+                    renameTarget = null
+                    selectedPaths = emptySet()
+                },
+                onDismiss = { renameTarget = null }
+            )
+        }
+
+        // --- Open as dialog ---
+        openAsTarget?.let { target ->
+            OpenAsDialog(
+                onPick = { mime ->
+                    openAs(context, target, mime, viewModel)
+                    openAsTarget = null
+                    selectedPaths = emptySet()
+                },
+                onDismiss = { openAsTarget = null }
+            )
+        }
+
+        // --- Copy/Move destination picker ---
+        moveCopyRequest?.let { request ->
+            MoveCopyPickerDialog(
+                request = request,
+                viewModel = viewModel,
+                hasDevicePermission = hasPermission,
+                onRequestDevicePermission = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        try {
+                            context.startActivity(
+                                Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                }
+                            )
+                        } catch (e: Exception) {
+                            try {
+                                context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                            } catch (ex: Exception) {
+                                viewModel.dispatchMessage(context.getString(R.string.msg_cannot_launch_settings_files))
+                            }
+                        }
+                    }
+                },
+                onConfirm = { destDir ->
+                    if (request.isMove) viewModel.moveItemsTo(request.items, destDir)
+                    else viewModel.copyItemsTo(request.items, destDir)
+                    moveCopyRequest = null
+                    selectedPaths = emptySet()
+                },
+                onDismiss = { moveCopyRequest = null }
             )
         }
 
@@ -821,37 +1030,156 @@ fun FileExplorerScreen(
             )
         }
 
-        // --- Folder Creator Dialog ---
-        if (showCreateFolderDialog) {
+        // --- Create Dialog (Folder name + Secure Note option) ---
+        if (showCreateDialog) {
             var folderNameInput by remember { mutableStateOf("") }
             AlertDialog(
-                onDismissRequest = { showCreateFolderDialog = false },
-                title = { Text(stringResource(R.string.dialog_create_folder_title)) },
+                onDismissRequest = { showCreateDialog = false },
+                title = { Text(stringResource(R.string.menu_create)) },
                 text = {
-                    OutlinedTextField(
-                        value = folderNameInput,
-                        onValueChange = { folderNameInput = it },
-                        label = { Text(stringResource(R.string.dialog_folder_name_label)) },
-                        placeholder = { Text(stringResource(R.string.dialog_folder_name_placeholder)) },
-                        modifier = Modifier.fillMaxWidth().testTag("folder_input_field"),
-                        singleLine = true
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        OutlinedTextField(
+                            value = folderNameInput,
+                            onValueChange = { folderNameInput = it },
+                            label = { Text(stringResource(R.string.dialog_folder_name_label)) },
+                            placeholder = { Text(stringResource(R.string.dialog_folder_name_placeholder)) },
+                            modifier = Modifier.fillMaxWidth().testTag("folder_input_field"),
+                            singleLine = true
+                        )
+                        Surface(
+                            onClick = {
+                                showCreateDialog = false
+                                showCreateFileDialog = true
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                            modifier = Modifier.fillMaxWidth().testTag("create_secure_note_option")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.NoteAdd,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    stringResource(R.string.create_option_secure_note),
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
                             if (folderNameInput.isNotBlank()) {
                                 viewModel.createFolder(folderNameInput.trim())
-                                showCreateFolderDialog = false
+                                showCreateDialog = false
                             }
                         },
+                        enabled = folderNameInput.isNotBlank(),
                         modifier = Modifier.testTag("confirm_create_folder_btn")
                     ) {
-                        Text(stringResource(R.string.action_create))
+                        Text(stringResource(R.string.create_option_folder))
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showCreateFolderDialog = false }) {
+                    TextButton(onClick = { showCreateDialog = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
+            )
+        }
+
+        // --- View Type Dialog ---
+        if (showViewTypeDialog) {
+            AlertDialog(
+                onDismissRequest = { showViewTypeDialog = false },
+                title = { Text(stringResource(R.string.menu_view_type)) },
+                text = {
+                    Column {
+                        FileViewMode.values().forEach { mode ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable {
+                                        viewModel.updateFileViewMode(mode.storageKey)
+                                        showViewTypeDialog = false
+                                    }
+                                    .padding(vertical = 12.dp, horizontal = 8.dp)
+                                    .testTag("files_view_${mode.storageKey}"),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    mode.icon,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(stringResource(mode.contentDescRes), modifier = Modifier.weight(1f))
+                                if (mode == fileViewMode) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showViewTypeDialog = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
+            )
+        }
+
+        // --- Sort By Dialog ---
+        if (showSortByDialog) {
+            AlertDialog(
+                onDismissRequest = { showSortByDialog = false },
+                title = { Text(stringResource(R.string.menu_sort_by)) },
+                text = {
+                    Column {
+                        FileSortMode.values().forEach { mode ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable {
+                                        sortMode = mode
+                                        showSortByDialog = false
+                                    }
+                                    .padding(vertical = 12.dp, horizontal = 8.dp)
+                                    .testTag("files_sort_${mode.name.lowercase()}"),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(stringResource(mode.labelRes), modifier = Modifier.weight(1f))
+                                if (mode == sortMode) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showSortByDialog = false }) {
                         Text(stringResource(R.string.action_cancel))
                     }
                 }
@@ -1043,11 +1371,16 @@ fun FileExplorerScreen(
             }
         }
 
-        // --- ZIP Compress Options Dialog ---
-        showZipDialogForFile?.let { pendingZipFile ->
-            var zipNameInput by remember { mutableStateOf(pendingZipFile.name + ".zip") }
+        // --- ZIP Compress Options Dialog (single or multiple items) ---
+        showZipDialogForItems?.let { pendingZipItems ->
+            val defaultName = if (pendingZipItems.size == 1) {
+                pendingZipItems.first().name + ".zip"
+            } else {
+                "archive.zip"
+            }
+            var zipNameInput by remember { mutableStateOf(defaultName) }
             AlertDialog(
-                onDismissRequest = { showZipDialogForFile = null },
+                onDismissRequest = { showZipDialogForItems = null },
                 title = { Text(stringResource(R.string.dialog_compress_title)) },
                 text = {
                     OutlinedTextField(
@@ -1062,8 +1395,13 @@ fun FileExplorerScreen(
                     Button(
                         onClick = {
                             if (zipNameInput.isNotBlank()) {
-                                viewModel.compressFolderOrFile(pendingZipFile, zipNameInput.trim())
-                                showZipDialogForFile = null
+                                if (pendingZipItems.size == 1) {
+                                    viewModel.compressFolderOrFile(pendingZipItems.first(), zipNameInput.trim())
+                                } else {
+                                    viewModel.compressItems(pendingZipItems, zipNameInput.trim())
+                                }
+                                showZipDialogForItems = null
+                                selectedPaths = emptySet()
                             }
                         }
                     ) {
@@ -1071,7 +1409,7 @@ fun FileExplorerScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showZipDialogForFile = null }) {
+                    TextButton(onClick = { showZipDialogForItems = null }) {
                         Text(stringResource(R.string.action_cancel))
                     }
                 }
@@ -1179,32 +1517,6 @@ fun FileExplorerScreen(
 }
 
 @Composable
-private fun HeaderActionButton(
-    icon: ImageVector,
-    contentDescription: String,
-    filled: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(13.dp),
-        color = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-        border = if (filled) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        shadowElevation = if (filled) 4.dp else 0.dp,
-        modifier = Modifier.size(38.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                tint = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(19.dp)
-            )
-        }
-    }
-}
-
-@Composable
 private fun SourcePill(
     selected: Boolean,
     icon: ImageVector,
@@ -1244,55 +1556,21 @@ private fun SourcePill(
     }
 }
 
-/** Compact segmented control of the three [FileViewMode] icons, shown in the section header. */
-@Composable
-private fun ViewModeToggle(
-    current: FileViewMode,
-    onSelect: (FileViewMode) -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(9.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier.testTag("files_view_toggle")
-    ) {
-        Row(
-            modifier = Modifier.padding(2.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            FileViewMode.values().forEach { mode ->
-                val selected = mode == current
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(7.dp))
-                        .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                        .clickable { onSelect(mode) }
-                        .padding(5.dp)
-                        .testTag("files_view_${mode.storageKey}"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = mode.icon,
-                        contentDescription = stringResource(mode.contentDescRes),
-                        tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileRowItem(
     item: FileItem,
     onItemClick: () -> Unit,
-    onActionMenuOpen: () -> Unit,
+    onToggleSelection: () -> Unit,
+    onOpenExternal: () -> Unit,
+    selectionMode: Boolean,
+    isSelected: Boolean,
     isSecuredLocked: Boolean
 ) {
     val fileIcon = getIconForFileCategory(item)
     val iconTint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     val isApk = !item.isDirectory && item.name.substringAfterLast('.', "").lowercase() == "apk"
+    val showThumbnail = !isSecuredLocked && !item.isDirectory && item.category == "Image"
     val dateText = remember(item.file) {
         val lastMod = item.file.lastModified()
         val format = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
@@ -1309,13 +1587,21 @@ fun FileRowItem(
     }
 
     Surface(
-        onClick = onItemClick,
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(
+            if (isSelected) 1.5.dp else 1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+        ),
         shadowElevation = 1.dp,
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .combinedClickable(
+                onClick = { if (selectionMode) onToggleSelection() else onItemClick() },
+                onDoubleClick = if (!item.isDirectory && !selectionMode) onOpenExternal else null,
+                onLongClick = onToggleSelection
+            )
             .testTag("file_row_${item.name}")
     ) {
         Row(
@@ -1330,21 +1616,44 @@ fun FileRowItem(
                     .background(iconTint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (isSecuredLocked) {
-                    Icon(
+                when {
+                    isSecuredLocked -> Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = stringResource(R.string.cd_locked_folder),
                         tint = Color(0xFFE74C3C),
                         modifier = Modifier.size(22.dp)
                     )
-                } else if (isApk) {
-                    ApkIcon(
+                    showThumbnail -> SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(item.file)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        loading = {
+                            Icon(
+                                imageVector = fileIcon,
+                                contentDescription = null,
+                                tint = iconTint,
+                                modifier = Modifier.size(23.dp)
+                            )
+                        },
+                        error = {
+                            Icon(
+                                imageVector = fileIcon,
+                                contentDescription = item.category,
+                                tint = iconTint,
+                                modifier = Modifier.size(23.dp)
+                            )
+                        }
+                    )
+                    isApk -> ApkIcon(
                         apkPath = item.absolutePath,
                         contentDescription = item.name,
                         fallbackTint = iconTint
                     )
-                } else {
-                    Icon(
+                    else -> Icon(
                         imageVector = fileIcon,
                         contentDescription = item.category,
                         tint = iconTint,
@@ -1401,17 +1710,12 @@ fun FileRowItem(
                 }
             }
 
-            IconButton(
-                onClick = onActionMenuOpen,
-                modifier = Modifier
-                    .size(30.dp)
-                    .testTag("options_${item.name}")
-            ) {
+            if (isSelected) {
                 Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = stringResource(R.string.cd_menu_actions),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
+                    Icons.Default.CheckCircle,
+                    contentDescription = stringResource(R.string.cd_selected_item),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -1422,11 +1726,15 @@ fun FileRowItem(
  * Grid/thumbnail tile. Image files render a real Coil thumbnail (falling back to the category
  * icon while loading or on decode failure); folders, APKs, and other types show their icon.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileGridItem(
     item: FileItem,
     onItemClick: () -> Unit,
-    onActionMenuOpen: () -> Unit,
+    onToggleSelection: () -> Unit,
+    onOpenExternal: () -> Unit,
+    selectionMode: Boolean,
+    isSelected: Boolean,
     isSecuredLocked: Boolean
 ) {
     val fileIcon = getIconForFileCategory(item)
@@ -1441,13 +1749,21 @@ fun FileGridItem(
     }
 
     Surface(
-        onClick = onItemClick,
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(
+            if (isSelected) 1.5.dp else 1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+        ),
         shadowElevation = 1.dp,
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .combinedClickable(
+                onClick = { if (selectionMode) onToggleSelection() else onItemClick() },
+                onDoubleClick = if (!item.isDirectory && !selectionMode) onOpenExternal else null,
+                onLongClick = onToggleSelection
+            )
             .testTag("file_grid_${item.name}")
     ) {
         Column {
@@ -1515,23 +1831,24 @@ fun FileGridItem(
                     )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(2.dp)
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
-                        .clickable { onActionMenuOpen() }
-                        .testTag("options_${item.name}"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = stringResource(R.string.cd_menu_actions),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                        modifier = Modifier.size(17.dp)
-                    )
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .size(24.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            .testTag("selected_${item.name}"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = stringResource(R.string.cd_selected_item),
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
 
@@ -1573,16 +1890,21 @@ fun FileGridItem(
 }
 
 /** Dense single-line row used by the compact view mode. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileCompactRow(
     item: FileItem,
     onItemClick: () -> Unit,
-    onActionMenuOpen: () -> Unit,
+    onToggleSelection: () -> Unit,
+    onOpenExternal: () -> Unit,
+    selectionMode: Boolean,
+    isSelected: Boolean,
     isSecuredLocked: Boolean
 ) {
     val fileIcon = getIconForFileCategory(item)
     val iconTint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     val isApk = !item.isDirectory && item.name.substringAfterLast('.', "").lowercase() == "apk"
+    val showThumbnail = !isSecuredLocked && !item.isDirectory && item.category == "Image"
     val sizeText = if (item.isDirectory) {
         if (item.sizeComputed) formatBytes(item.size) else null
     } else {
@@ -1590,12 +1912,20 @@ fun FileCompactRow(
     }
 
     Surface(
-        onClick = onItemClick,
         shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(
+            if (isSelected) 1.5.dp else 1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+        ),
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .combinedClickable(
+                onClick = { if (selectionMode) onToggleSelection() else onItemClick() },
+                onDoubleClick = if (!item.isDirectory && !selectionMode) onOpenExternal else null,
+                onLongClick = onToggleSelection
+            )
             .testTag("file_compact_${item.name}")
     ) {
         Row(
@@ -1616,6 +1946,31 @@ fun FileCompactRow(
                         contentDescription = stringResource(R.string.cd_locked_folder),
                         tint = Color(0xFFE74C3C),
                         modifier = Modifier.size(16.dp)
+                    )
+                    showThumbnail -> SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(item.file)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        loading = {
+                            Icon(
+                                imageVector = fileIcon,
+                                contentDescription = null,
+                                tint = iconTint,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        },
+                        error = {
+                            Icon(
+                                imageVector = fileIcon,
+                                contentDescription = item.category,
+                                tint = iconTint,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
                     )
                     isApk -> ApkIcon(
                         apkPath = item.absolutePath,
@@ -1664,116 +2019,156 @@ fun FileCompactRow(
                 )
             }
 
-            IconButton(
-                onClick = onActionMenuOpen,
-                modifier = Modifier
-                    .size(26.dp)
-                    .testTag("options_${item.name}")
-            ) {
+            if (isSelected) {
                 Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = stringResource(R.string.cd_menu_actions),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(16.dp)
+                    Icons.Default.CheckCircle,
+                    contentDescription = stringResource(R.string.cd_selected_item),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
     }
 }
 
-// Dialog options popup Card
+/**
+ * Contextual action bar shown in place of the search field while one or more items are selected
+ * (multi-select via long-press). Shows icon actions that adapt to the current selection:
+ * Details/Compress/Extract are single-selection only (they drive name dialogs); Lock-shield is
+ * shown when every selected item is a folder, Move-to-vault when every item is a file; Delete is
+ * always available and acts on the whole selection.
+ */
 @Composable
-fun CardItemMenu(
-    item: FileItem,
-    onDismiss: () -> Unit,
-    onDetailsClick: () -> Unit,
-    onZipClick: () -> Unit,
-    onExtractClick: () -> Unit,
-    onShieldToggle: () -> Unit,
-    onEncryptToVault: () -> Unit,
-    onDeleteClick: () -> Unit
+private fun SelectionToolbar(
+    selectedItems: List<FileItem>,
+    onClear: () -> Unit,
+    onAction: (SelectionAction) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(item.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(
-                    onClick = onDetailsClick,
-                    modifier = Modifier.fillMaxWidth().testTag("menu_details")
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text(stringResource(R.string.menu_details))
-                    }
-                }
+    val count = selectedItems.size
+    val single = selectedItems.singleOrNull()
+    val isSingle = single != null
+    val isSingleFile = single != null && !single.isDirectory
+    val isSingleFolder = single != null && single.isDirectory
+    val isImage = isSingleFile && single!!.category == "Image"
+    val isSingleZip = isSingleFile && single!!.name.lowercase().endsWith(".zip")
+    val allDirs = selectedItems.isNotEmpty() && selectedItems.all { it.isDirectory }
+    val allFiles = selectedItems.isNotEmpty() && selectedItems.all { !it.isDirectory }
+    val allSecured = allDirs && selectedItems.all { it.isSecured }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+    var menuExpanded by remember { mutableStateOf(false) }
 
-                if (item.isDirectory) {
-                    TextButton(
-                        onClick = onShieldToggle,
-                        modifier = Modifier.fillMaxWidth().testTag("menu_shield_toggle")
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.Security, contentDescription = null, tint = Color(0xFF2ECC71))
-                            Text(if (item.isSecured) stringResource(R.string.menu_remove_shield) else stringResource(R.string.menu_lock_folder))
-                        }
-                    }
-                } else {
-                    TextButton(
-                        onClick = onEncryptToVault,
-                        modifier = Modifier.fillMaxWidth().testTag("menu_move_vault")
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.VpnKey, contentDescription = null, tint = Color(0xFFF1C40F))
-                            Text(stringResource(R.string.menu_move_vault))
-                        }
-                    }
-                }
-
-                if (item.name.lowercase().endsWith(".zip")) {
-                    TextButton(
-                        onClick = onExtractClick,
-                        modifier = Modifier.fillMaxWidth().testTag("menu_extract")
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.FolderZip, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text(stringResource(R.string.menu_decompress))
-                        }
-                    }
-                } else {
-                    TextButton(
-                        onClick = onZipClick,
-                        modifier = Modifier.fillMaxWidth().testTag("menu_zip")
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.Compress, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text(stringResource(R.string.menu_compress))
-                        }
-                    }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                TextButton(
-                    onClick = onDeleteClick,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier.fillMaxWidth().testTag("menu_delete")
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Text(stringResource(R.string.menu_delete))
-                    }
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("files_selection_toolbar"),
+        shape = RoundedCornerShape(15.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Clear selection (acts as the "back"; no separate back arrow per design).
+            IconButton(onClick = onClear, modifier = Modifier.testTag("selection_clear")) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.cd_clear_selection),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            // Count shown as just the number (e.g. "1").
+            Text(
+                text = count.toString(),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.5.sp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            // Always-visible quick actions: Delete, Info, and (single only) Rename.
+            IconButton(onClick = { onAction(SelectionAction.DELETE) }, modifier = Modifier.testTag("selection_action_delete")) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.menu_delete),
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+            IconButton(onClick = { onAction(SelectionAction.INFO) }, modifier = Modifier.testTag("selection_action_details")) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = stringResource(R.string.menu_details),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            if (isSingle) {
+                IconButton(onClick = { onAction(SelectionAction.RENAME) }, modifier = Modifier.testTag("selection_action_rename")) {
+                    Icon(
+                        Icons.Default.DriveFileRenameOutline,
+                        contentDescription = stringResource(R.string.menu_rename),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close))
+            // Overflow: everything else, gated by selection type.
+            Box {
+                IconButton(onClick = { menuExpanded = true }, modifier = Modifier.testTag("selection_overflow")) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.cd_more_actions),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                    @Composable
+                    fun item(@androidx.annotation.StringRes labelRes: Int, icon: ImageVector, action: SelectionAction) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(labelRes)) },
+                            leadingIcon = { Icon(icon, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                onAction(action)
+                            }
+                        )
+                    }
+
+                    item(R.string.menu_share, Icons.Default.Share, SelectionAction.SHARE)
+                    item(R.string.menu_hide, Icons.Default.VisibilityOff, SelectionAction.HIDE)
+                    if (isSingle) {
+                        item(R.string.menu_create_shortcut, Icons.Default.AddLink, SelectionAction.CREATE_SHORTCUT)
+                        item(R.string.menu_copy_path, Icons.Default.ContentCopy, SelectionAction.COPY_PATH)
+                    }
+                    if (isImage) {
+                        item(R.string.menu_set_as, Icons.Default.Wallpaper, SelectionAction.SET_AS)
+                    }
+                    if (isSingleFile) {
+                        item(R.string.menu_open_with, Icons.Default.OpenInNew, SelectionAction.OPEN_WITH)
+                        item(R.string.menu_open_as, Icons.Default.FileOpen, SelectionAction.OPEN_AS)
+                    }
+                    item(R.string.menu_copy_to, Icons.Default.FileCopy, SelectionAction.COPY_TO)
+                    item(R.string.menu_move_to, Icons.AutoMirrored.Filled.DriveFileMove, SelectionAction.MOVE_TO)
+                    item(R.string.menu_compress, Icons.Default.Compress, SelectionAction.COMPRESS)
+                    if (isSingleZip) {
+                        item(R.string.menu_decompress, Icons.Default.FolderZip, SelectionAction.EXTRACT)
+                    }
+                    // Kept secure-app actions (per design): folders → lock/shield, files → vault.
+                    if (allDirs) {
+                        item(
+                            if (allSecured) R.string.menu_remove_shield else R.string.menu_lock_folder,
+                            Icons.Default.Security,
+                            SelectionAction.SHIELD_TOGGLE
+                        )
+                    }
+                    if (allFiles) {
+                        item(R.string.menu_move_vault, Icons.Default.VpnKey, SelectionAction.MOVE_VAULT)
+                    }
+                    item(R.string.menu_select_all, Icons.Default.SelectAll, SelectionAction.SELECT_ALL)
+                }
             }
         }
-    )
+    }
 }
 
 // Read-only properties dialog for a file or folder
@@ -1801,6 +2196,45 @@ fun FileDetailsDialog(
                 if (item.isDirectory) {
                     DetailRow(stringResource(R.string.detail_secured), if (item.isSecured) stringResource(R.string.common_yes) else stringResource(R.string.common_no))
                 }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_close))
+            }
+        }
+    )
+}
+
+/**
+ * Aggregate read-only properties dialog for a multi-selection. Shows the combined type, the shared
+ * parent folder, the total size, and the number of selected items. There is no single "modified"
+ * timestamp across a selection, so that row is rendered as a placeholder dash.
+ */
+@Composable
+fun SelectionDetailsDialog(
+    items: List<FileItem>,
+    onDismiss: () -> Unit
+) {
+    val hasFiles = items.any { !it.isDirectory }
+    val hasFolders = items.any { it.isDirectory }
+    val typeText = when {
+        hasFiles && hasFolders -> stringResource(R.string.detail_files_and_folders)
+        hasFolders -> stringResource(R.string.detail_folders)
+        else -> stringResource(R.string.detail_files)
+    }
+    val parentPath = items.firstOrNull()?.file?.parent ?: ""
+    val totalSize = items.sumOf { it.size }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.files_selected_count, items.size)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                DetailRow(stringResource(R.string.detail_type), typeText)
+                DetailRow(stringResource(R.string.detail_path), parentPath)
+                DetailRow(stringResource(R.string.detail_size), formatBytes(totalSize))
+                DetailRow(stringResource(R.string.detail_count), items.size.toString())
+                DetailRow(stringResource(R.string.detail_modified), "—")
             }
         },
         confirmButton = {
@@ -2057,6 +2491,362 @@ private fun DetailRow(label: String, value: String) {
 }
 
 // Helpers
+
+/**
+ * Opens [item] with an external app. Regular files use `ACTION_VIEW` (the OS opens the user's
+ * default app, or shows the app chooser when none is set). APKs are routed to the system package
+ * installer, which handles both fresh installs and updates — on Android O+ this first requires the
+ * per-app "install unknown apps" permission, so when it is not yet granted the user is sent to that
+ * settings screen and asked to re-tap the APK.
+ */
+fun openFileExternally(context: Context, item: FileItem, viewModel: StorageViewModel) {
+    val uri: Uri = try {
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", item.file)
+    } catch (e: Exception) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_open_failed, item.name))
+        return
+    }
+
+    val extension = item.name.substringAfterLast('.', "").lowercase()
+
+    if (extension == "apk") {
+        // Android O+ gates APK installs behind a per-app "install unknown apps" permission.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !context.packageManager.canRequestPackageInstalls()
+        ) {
+            viewModel.dispatchMessage(context.getString(R.string.msg_install_permission_needed))
+            try {
+                context.startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        Uri.parse("package:${context.packageName}")
+                    )
+                )
+            } catch (e: Exception) {
+                viewModel.dispatchMessage(context.getString(R.string.msg_cannot_launch_settings))
+            }
+            return
+        }
+        try {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "application/vnd.android.package-archive")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            )
+        } catch (e: Exception) {
+            viewModel.dispatchMessage(context.getString(R.string.msg_install_failed, item.name))
+        }
+        return
+    }
+
+    val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "*/*"
+    try {
+        context.startActivity(
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mime)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        )
+    } catch (e: ActivityNotFoundException) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_no_app_to_open, item.name))
+    } catch (e: Exception) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_open_failed, item.name))
+    }
+}
+
+// ---- Selection-menu support: state holders, intent helpers, and dialogs ----
+
+/** A pending generic confirmation: [message] is shown with OK/Cancel; OK runs [onConfirm]. */
+data class ConfirmSpec(val message: String, val onConfirm: () -> Unit)
+
+/** A pending Copy-to / Move-to request awaiting a destination from the folder picker. */
+data class MoveCopyRequest(val items: List<FileItem>, val isMove: Boolean)
+
+private fun mimeTypeOf(item: FileItem): String {
+    val ext = item.name.substringAfterLast('.', "").lowercase()
+    return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
+}
+
+private fun uriFor(context: Context, item: FileItem): Uri =
+    FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", item.file)
+
+/** Shares the file(s) of [items] through the system share sheet. Folders cannot be shared. */
+fun shareItems(context: Context, items: List<FileItem>, viewModel: StorageViewModel) {
+    val files = items.filter { !it.isDirectory }
+    if (files.isEmpty()) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_cannot_share_folder))
+        return
+    }
+    try {
+        val uris = ArrayList(files.map { uriFor(context, it) })
+        val intent = if (uris.size == 1) {
+            Intent(Intent.ACTION_SEND).apply {
+                type = mimeTypeOf(files.first())
+                putExtra(Intent.EXTRA_STREAM, uris.first())
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        } else {
+            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = "*/*"
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        }
+        context.startActivity(Intent.createChooser(intent, null).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+    } catch (e: Exception) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_share_failed, files.first().name))
+    }
+}
+
+/** Launches the "Set as" flow (wallpaper, contact photo, …) for an image via ACTION_ATTACH_DATA. */
+fun setAsImage(context: Context, item: FileItem, viewModel: StorageViewModel) {
+    if (item.category != "Image") {
+        viewModel.dispatchMessage(context.getString(R.string.msg_set_as_image_only))
+        return
+    }
+    try {
+        val intent = Intent(Intent.ACTION_ATTACH_DATA).apply {
+            addCategory(Intent.CATEGORY_DEFAULT)
+            setDataAndType(uriFor(context, item), "image/*")
+            putExtra("mimeType", "image/*")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, null).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+    } catch (e: Exception) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_set_as_failed, item.name))
+    }
+}
+
+/** Opens [item] forcing the system app-chooser bottom sheet (never the silent default). */
+fun openWithChooser(context: Context, item: FileItem, viewModel: StorageViewModel) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uriFor(context, item), mimeTypeOf(item))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, null).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+    } catch (e: ActivityNotFoundException) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_no_app_to_open, item.name))
+    } catch (e: Exception) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_open_failed, item.name))
+    }
+}
+
+/** Opens [item] forcing the chosen [mime] type (the "Open as" dialog's selection). */
+fun openAs(context: Context, item: FileItem, mime: String, viewModel: StorageViewModel) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uriFor(context, item), mime)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, null).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+    } catch (e: ActivityNotFoundException) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_no_app_to_open, item.name))
+    } catch (e: Exception) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_open_failed, item.name))
+    }
+}
+
+/** Copies the absolute path(s) of [items] to the clipboard (newline-separated for many). */
+fun copyPathToClipboard(context: Context, items: List<FileItem>, viewModel: StorageViewModel) {
+    val text = items.joinToString("\n") { it.absolutePath }
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+    clipboard?.setPrimaryClip(ClipData.newPlainText("path", text))
+    viewModel.dispatchMessage(context.getString(R.string.msg_path_copied))
+}
+
+/** Requests a pinned home-screen shortcut that re-opens the app, labelled with the item name. */
+fun createPinnedShortcut(context: Context, item: FileItem, viewModel: StorageViewModel) {
+    if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+        viewModel.dispatchMessage(context.getString(R.string.msg_shortcut_unsupported))
+        return
+    }
+    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        ?: Intent(Intent.ACTION_MAIN)
+    val shortcut = ShortcutInfoCompat.Builder(context, "file_${item.absolutePath.hashCode()}")
+        .setShortLabel(item.name.take(24))
+        .setLongLabel(item.name)
+        .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
+        .setIntent(launch)
+        .build()
+    ShortcutManagerCompat.requestPinShortcut(context, shortcut, null)
+    viewModel.dispatchMessage(context.getString(R.string.msg_shortcut_created, item.name))
+}
+
+@Composable
+fun ConfirmActionDialog(message: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.confirm_generic_title)) },
+        text = { Text(message) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_ok)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+        modifier = Modifier.testTag("confirm_action_dialog")
+    )
+}
+
+@Composable
+fun RenameDialog(item: FileItem, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(item.name) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rename_dialog_title)) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                singleLine = true,
+                label = { Text(stringResource(R.string.rename_dialog_label)) },
+                modifier = Modifier.testTag("rename_field")
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(name) },
+                enabled = name.isNotBlank() && name.trim() != item.name
+            ) { Text(stringResource(R.string.action_ok)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+    )
+}
+
+@Composable
+fun OpenAsDialog(onPick: (String) -> Unit, onDismiss: () -> Unit) {
+    val options = listOf(
+        R.string.open_as_text to "text/*",
+        R.string.open_as_image to "image/*",
+        R.string.open_as_audio to "audio/*",
+        R.string.open_as_video to "video/*",
+        R.string.open_as_other to "*/*"
+    )
+    var selected by remember { mutableStateOf(0) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.open_as_dialog_title)) },
+        text = {
+            Column {
+                options.forEachIndexed { index, (labelRes, _) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { selected = index }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = selected == index, onClick = { selected = index })
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(labelRes))
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onPick(options[selected].second) }) { Text(stringResource(R.string.action_ok)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MoveCopyPickerDialog(
+    request: MoveCopyRequest,
+    viewModel: StorageViewModel,
+    hasDevicePermission: Boolean,
+    onRequestDevicePermission: () -> Unit,
+    onConfirm: (File) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val appRoot = viewModel.appStorageRoot
+    var rootMode by remember { mutableStateOf("app") }
+    val currentRoot = if (rootMode == "device") viewModel.deviceStorageRoot else appRoot
+    var currentDir by remember { mutableStateOf(appRoot) }
+    var subdirs by remember { mutableStateOf<List<File>>(emptyList()) }
+
+    LaunchedEffect(currentDir, rootMode) {
+        subdirs = viewModel.subdirectoriesOf(currentDir)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(if (request.isMove) R.string.picker_move_title else R.string.picker_copy_title)) },
+        text = {
+            Column {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = rootMode == "app",
+                        onClick = { rootMode = "app"; currentDir = appRoot },
+                        label = { Text(stringResource(R.string.picker_root_app)) }
+                    )
+                    FilterChip(
+                        selected = rootMode == "device",
+                        onClick = {
+                            if (hasDevicePermission) { rootMode = "device"; currentDir = viewModel.deviceStorageRoot }
+                            else onRequestDevicePermission()
+                        },
+                        label = { Text(stringResource(R.string.picker_root_device)) }
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    currentDir.absolutePath,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(4.dp))
+                LazyColumn(modifier = Modifier.heightIn(max = 260.dp)) {
+                    if (currentDir.absolutePath != currentRoot.absolutePath) {
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { currentDir = currentDir.parentFile ?: currentRoot }
+                                    .padding(vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.ArrowUpward, contentDescription = null)
+                                Spacer(Modifier.width(10.dp))
+                                Text("..")
+                            }
+                        }
+                    }
+                    items(subdirs) { dir ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { currentDir = dir }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(10.dp))
+                            Text(dir.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                    if (subdirs.isEmpty() && currentDir.absolutePath == currentRoot.absolutePath) {
+                        item {
+                            Text(
+                                stringResource(R.string.picker_empty),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(currentDir) }) {
+                Text(stringResource(if (request.isMove) R.string.picker_move_here else R.string.picker_copy_here))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+    )
+}
 
 fun getIconForFileCategory(item: FileItem): ImageVector {
     if (item.isDirectory) return Icons.Default.Folder

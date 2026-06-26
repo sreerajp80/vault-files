@@ -35,6 +35,34 @@ object ZipUtility {
         }
     }
 
+    /**
+     * Compresses several files/folders into a single ZIP. Each source is placed at the archive
+     * root under its own name (files as `name`, directories nested under `name/…`), so selecting
+     * multiple folders produces one archive containing each folder.
+     * @return true if successful, false otherwise.
+     */
+    fun zipMultiple(sources: List<File>, destZipFile: File): Boolean {
+        return try {
+            FileOutputStream(destZipFile).use { fos ->
+                ZipOutputStream(BufferedOutputStream(fos)).use { zos ->
+                    for (source in sources) {
+                        if (source.isDirectory) {
+                            // Nest entries under the directory's own name (use the parent as the
+                            // relative root so the folder itself becomes the top-level entry).
+                            zipDirectory(source.parentFile ?: source, source, zos)
+                        } else {
+                            zipFile(source, source.name, zos)
+                        }
+                    }
+                }
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     private fun zipDirectory(rootDir: File, currentDir: File, zos: ZipOutputStream) {
         val files = currentDir.listFiles() ?: return
         for (file in files) {

@@ -88,6 +88,11 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
     private val _phoneLockDeleteEnabled = MutableStateFlow(true)
     val phoneLockDeleteEnabled: StateFlow<Boolean> = _phoneLockDeleteEnabled.asStateFlow()
 
+    // null until loaded from storage, so the first-launch request effect doesn't fire on the
+    // default value before the persisted flag is read.
+    private val _storagePermissionRequested = MutableStateFlow<Boolean?>(null)
+    val storagePermissionRequested: StateFlow<Boolean?> = _storagePermissionRequested.asStateFlow()
+
     private val _customPin = MutableStateFlow<String?>(null)
     val customPin: StateFlow<String?> = _customPin.asStateFlow()
 
@@ -145,6 +150,7 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
             // Sync preferences on start
             _storageSourceMode.value = repository.getStorageSourceMode()
             _phoneLockDeleteEnabled.value = repository.isPhoneLockDeleteEnabled()
+            _storagePermissionRequested.value = repository.isStoragePermissionRequested()
             _customPin.value = repository.getCustomPin()
             _themePreference.value = repository.getThemePreference()
             _showHiddenItems.value = repository.isShowHiddenItems()
@@ -275,7 +281,10 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
 
     fun refreshStorageStats() {
         viewModelScope.launch {
-            _storageStats.value = repository.getStorageUsageStats(userStorageRoot)
+            _storageStats.value = repository.getStorageUsageStats(
+                userStorageRoot,
+                isDeviceSource = _storageSourceMode.value == "device"
+            )
         }
     }
 
@@ -411,6 +420,80 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    // --- General file actions (rename / hide / copy / move) ---
+
+    /** Roots the Copy-to / Move-to picker can browse. */
+    val appStorageRoot: File get() = repository.appStorageRoot
+    val deviceStorageRoot: File get() = repository.deviceStorageRoot
+
+    suspend fun subdirectoriesOf(dir: File): List<File> = repository.listSubdirectories(dir)
+
+    fun renameFileItem(item: FileItem, newName: String) {
+        viewModelScope.launch {
+            val success = repository.renameFile(item.file, newName)
+            if (success) {
+                dispatchMessage(string(R.string.msg_renamed, item.name, newName.trim()))
+                loadFilesInDirectory(_currentDirectory.value)
+            } else {
+                dispatchMessage(string(R.string.msg_rename_failed, item.name))
+            }
+        }
+    }
+
+    /**
+     * Toggles the Android "hidden" convention (a leading ".") on each item by renaming it. Items
+     * whose name already starts with "." are un-hidden; the rest are hidden.
+     */
+    fun hideOrUnhideItems(items: List<FileItem>) {
+        if (items.isEmpty()) return
+        viewModelScope.launch {
+            var hidden = 0
+            var shown = 0
+            items.forEach { item ->
+                val isHidden = item.name.startsWith(".")
+                val newName = if (isHidden) item.name.removePrefix(".") else "." + item.name
+                if (newName.isNotEmpty() && repository.renameFile(item.file, newName)) {
+                    if (isHidden) shown++ else hidden++
+                }
+            }
+            when {
+                hidden > 0 && shown == 0 -> dispatchMessage(string(R.string.msg_hidden, hidden))
+                shown > 0 && hidden == 0 -> dispatchMessage(string(R.string.msg_unhidden, shown))
+                hidden > 0 || shown > 0 -> dispatchMessage(string(R.string.msg_hidden_mixed, hidden, shown))
+                else -> dispatchMessage(string(R.string.msg_hide_failed))
+            }
+            loadFilesInDirectory(_currentDirectory.value)
+        }
+    }
+
+    fun copyItemsTo(items: List<FileItem>, destDir: File) {
+        if (items.isEmpty()) return
+        viewModelScope.launch {
+            val ok = items.count { repository.copyFileOrFolder(it.file, destDir) }
+            if (ok > 0) {
+                dispatchMessage(string(R.string.msg_copied, ok, destDir.name))
+            } else {
+                dispatchMessage(string(R.string.msg_copy_failed))
+            }
+            loadFilesInDirectory(_currentDirectory.value)
+            refreshStorageStats()
+        }
+    }
+
+    fun moveItemsTo(items: List<FileItem>, destDir: File) {
+        if (items.isEmpty()) return
+        viewModelScope.launch {
+            val ok = items.count { repository.moveFileOrFolder(it.file, destDir) }
+            if (ok > 0) {
+                dispatchMessage(string(R.string.msg_moved, ok, destDir.name))
+            } else {
+                dispatchMessage(string(R.string.msg_move_failed))
+            }
+            loadFilesInDirectory(_currentDirectory.value)
+            refreshStorageStats()
+        }
+    }
+
     // --- Archiving Zip Tasks ---
 
     fun compressFolderOrFile(item: FileItem, zipName: String) {
@@ -418,6 +501,20 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
             val success = repository.compressFileOrFolder(item.file, zipName)
             if (success) {
                 dispatchMessage(string(R.string.msg_zip_success, item.name, zipName))
+                loadFilesInDirectory(_currentDirectory.value)
+                refreshStorageStats()
+            } else {
+                dispatchMessage(string(R.string.msg_zip_failed))
+            }
+        }
+    }
+
+    fun compressItems(items: List<FileItem>, zipName: String) {
+        if (items.isEmpty()) return
+        viewModelScope.launch {
+            val success = repository.compressMultiple(items.map { it.file }, zipName)
+            if (success) {
+                dispatchMessage(string(R.string.msg_zip_success_multi, items.size, zipName))
                 loadFilesInDirectory(_currentDirectory.value)
                 refreshStorageStats()
             } else {
@@ -545,6 +642,13 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
             loadFilesInDirectory(_currentDirectory.value)
             refreshStorageStats()
             dispatchMessage(string(if (show) R.string.msg_hidden_listed else R.string.msg_hidden_hidden))
+        }
+    }
+
+    fun markStoragePermissionRequested() {
+        viewModelScope.launch {
+            repository.saveStoragePermissionRequested(true)
+            _storagePermissionRequested.value = true
         }
     }
 

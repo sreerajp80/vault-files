@@ -302,7 +302,7 @@ class StorageRepository(
 
     // --- File Type Wise Usage Calculation ---
 
-    suspend fun getStorageUsageStats(storageRoot: File): StorageStats = withContext(Dispatchers.IO) {
+    suspend fun getStorageUsageStats(storageRoot: File, isDeviceSource: Boolean = true): StorageStats = withContext(Dispatchers.IO) {
         var imageSize = 0L
         var videoSize = 0L
         var audioSize = 0L
@@ -343,9 +343,21 @@ class StorageRepository(
         val freeBytes = stat.availableBlocksLong * stat.blockSizeLong
         val usedBytesResult = totalInternalMax - freeBytes
 
-        // Space used on the partition that we did not itemize is reported as "Other".
-        val unscannedSpace = (usedBytesResult - totalSize).coerceAtLeast(0L)
-        val finalOtherBytes = otherSize + unscannedSpace
+        // For the real external-storage source, files exist on the partition that we cannot
+        // itemize; that unscanned space is reported as "Other" and counts toward "used".
+        // For the app sandbox, StatFs reflects the whole /data partition (not just our files),
+        // so we must report only what we actually scanned — otherwise the entire device's used
+        // space leaks into "Other" and the ring.
+        val finalOtherBytes: Long
+        val finalUsedBytes: Long
+        if (isDeviceSource) {
+            val unscannedSpace = (usedBytesResult - totalSize).coerceAtLeast(0L)
+            finalOtherBytes = otherSize + unscannedSpace
+            finalUsedBytes = usedBytesResult
+        } else {
+            finalOtherBytes = otherSize
+            finalUsedBytes = totalSize
+        }
 
         return@withContext StorageStats(
             imageBytes = imageSize,
@@ -354,7 +366,7 @@ class StorageRepository(
             documentBytes = docSize,
             archiveBytes = archiveSize,
             otherBytes = finalOtherBytes,
-            usedBytes = usedBytesResult,
+            usedBytes = finalUsedBytes,
             totalLimitBytes = totalInternalMax
         )
     }
@@ -365,6 +377,73 @@ class StorageRepository(
         val newFolder = File(parentDir, name)
         if (newFolder.exists()) return@withContext false
         return@withContext newFolder.mkdirs()
+    }
+
+    /**
+     * The two roots the Copy-to / Move-to picker can browse: the app's private sandbox storage and
+     * the device's shared external storage. Browsing the device root requires the all-files
+     * permission (MANAGE_EXTERNAL_STORAGE), which the UI checks before offering it.
+     */
+    val appStorageRoot: File get() = userStorageRoot
+    val deviceStorageRoot: File get() = android.os.Environment.getExternalStorageDirectory()
+
+    /** Immediate subdirectories of [dir], sorted by name — backs the folder-picker listing. */
+    suspend fun listSubdirectories(dir: File): List<File> = withContext(Dispatchers.IO) {
+        return@withContext dir.listFiles { f -> f.isDirectory }
+            ?.sortedBy { it.name.lowercase() }
+            ?: emptyList()
+    }
+
+    /** Renames [file] to [newName] within the same parent folder. Fails on blank or colliding names. */
+    suspend fun renameFile(file: File, newName: String): Boolean = withContext(Dispatchers.IO) {
+        val trimmed = newName.trim()
+        if (trimmed.isEmpty() || trimmed == file.name) return@withContext false
+        val target = File(file.parentFile, trimmed)
+        if (target.exists()) return@withContext false
+        return@withContext file.renameTo(target)
+    }
+
+    /**
+     * Copies [source] (file or folder) into [destDir]. Folders are copied recursively. Returns false
+     * if the destination already holds an entry of the same name or on any I/O failure.
+     */
+    suspend fun copyFileOrFolder(source: File, destDir: File): Boolean = withContext(Dispatchers.IO) {
+        if (!source.exists()) return@withContext false
+        if (!destDir.exists() && !destDir.mkdirs()) return@withContext false
+        val target = File(destDir, source.name)
+        if (target.exists()) return@withContext false
+        return@withContext try {
+            source.copyRecursively(target, overwrite = false)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    /**
+     * Moves [source] into [destDir] via copy-then-delete (not [File.renameTo]) so it also works
+     * across filesystems — e.g. between app sandbox storage and device external storage. Returns
+     * false on collision or if the original could not be removed after copying.
+     */
+    suspend fun moveFileOrFolder(source: File, destDir: File): Boolean = withContext(Dispatchers.IO) {
+        if (!source.exists()) return@withContext false
+        if (source.absolutePath == File(destDir, source.name).absolutePath) return@withContext false
+        if (!destDir.exists() && !destDir.mkdirs()) return@withContext false
+        val target = File(destDir, source.name)
+        if (target.exists()) return@withContext false
+        return@withContext try {
+            source.copyRecursively(target, overwrite = false)
+            val removed = source.deleteRecursively()
+            if (!removed) {
+                target.deleteRecursively() // roll back the copy so we don't duplicate
+                false
+            } else {
+                true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
     /**
@@ -436,6 +515,16 @@ class StorageRepository(
         }
         val destFile = File(source.parentFile ?: userStorageRoot, zipName)
         return@withContext ZipUtility.zip(source, destFile)
+    }
+
+    suspend fun compressMultiple(sources: List<File>, targetZipName: String): Boolean = withContext(Dispatchers.IO) {
+        if (sources.isEmpty()) return@withContext false
+        var zipName = targetZipName
+        if (!zipName.endsWith(".zip")) {
+            zipName += ".zip"
+        }
+        val destFile = File(sources.first().parentFile ?: userStorageRoot, zipName)
+        return@withContext ZipUtility.zipMultiple(sources, destFile)
     }
 
     suspend fun decompressZipFile(zipFile: File): Boolean = withContext(Dispatchers.IO) {
@@ -557,6 +646,14 @@ class StorageRepository(
 
     suspend fun savePhoneLockDeleteSetting(enabled: Boolean) = withContext(Dispatchers.IO) {
         settingsDao.saveSetting(AppSetting("phone_lock_delete_enabled", enabled.toString()))
+    }
+
+    suspend fun isStoragePermissionRequested(): Boolean = withContext(Dispatchers.IO) {
+        return@withContext settingsDao.getSetting("storage_permission_requested")?.value?.toBoolean() ?: false
+    }
+
+    suspend fun saveStoragePermissionRequested(requested: Boolean) = withContext(Dispatchers.IO) {
+        settingsDao.saveSetting(AppSetting("storage_permission_requested", requested.toString()))
     }
 
     suspend fun getCustomPin(): String? = withContext(Dispatchers.IO) {

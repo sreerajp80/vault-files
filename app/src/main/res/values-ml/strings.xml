@@ -89,10 +89,16 @@
     <string name="cd_view_list">പട്ടിക കാഴ്ച</string>
     <string name="cd_view_grid">ഗ്രിഡ് കാഴ്ച</string>
     <string name="cd_view_compact">സംക്ഷിപ്ത കാഴ്ച</string>
+    <string name="cd_files_options">കൂടുതൽ ഓപ്ഷനുകൾ</string>
+    <string name="menu_view_type">കാഴ്ച തരം</string>
+    <string name="menu_sort_by">അടുക്കുക</string>
+    <string name="menu_create">സൃഷ്ടിക്കുക</string>
+    <string name="create_option_folder">ഫോൾഡർ</string>
+    <string name="create_option_secure_note">സുരക്ഷിത കുറിപ്പ്</string>
     <string name="files_filter_chip">%1$s · %2$d</string>
     <string name="cd_clear_filter">ഫിൽട്ടർ മായ്ക്കുക</string>
     <string name="cd_navigate_up">മുകളിലേക്ക്</string>
-    <string name="files_breadcrumb_summary">%1$s · %2$s</string>
+    <string name="files_breadcrumb_summary">%1$s · %2$s · %3$s</string>
     <string name="cd_new_folder">പുതിയ ഫോൾഡർ</string>
     <string name="cd_new_text_file">പുതിയ ടെക്സ്റ്റ് ഫയൽ</string>
     <string name="files_search_placeholder">ഫയലുകളും ഫോൾഡറുകളും തിരയുക</string>
@@ -145,6 +151,64 @@
     <string name="menu_decompress">ZIP ഡീകംപ്രസ് ചെയ്യുക</string>
     <string name="menu_compress">ഫോൾഡർ/ഫയൽ ZIP ആയി കംപ്രസ് ചെയ്യുക</string>
     <string name="menu_delete">ഫയൽ ഇനം ഇല്ലാതാക്കുക</string>
+    <string name="cd_clear_selection">തിരഞ്ഞെടുപ്പ് മായ്ക്കുക</string>
+    <string name="cd_selected_item">തിരഞ്ഞെടുത്തു</string>
+    <string name="files_selected_count">%1$d തിരഞ്ഞെടുത്തു</string>
+    <string name="files_selected_count_total">%1$d / %2$d</string>
+    <string name="cd_more_actions">കൂടുതൽ പ്രവർത്തനങ്ങൾ</string>
+    <string name="menu_rename">പേരുമാറ്റുക</string>
+    <string name="menu_share">പങ്കിടുക</string>
+    <string name="menu_hide">മറയ്ക്കുക</string>
+    <string name="menu_create_shortcut">കുറുക്കുവഴി ഉണ്ടാക്കുക</string>
+    <string name="menu_copy_path">പാത് ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തുക</string>
+    <string name="menu_set_as">ഇതായി സജ്ജമാക്കുക</string>
+    <string name="menu_open_with">ഇതുപയോഗിച്ച് തുറക്കുക</string>
+    <string name="menu_open_as">ഇതായി തുറക്കുക</string>
+    <string name="menu_copy_to">ഇതിലേക്ക് പകർത്തുക</string>
+    <string name="menu_move_to">ഇതിലേക്ക് നീക്കുക</string>
+    <string name="menu_select_all">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
+
+    <!-- Rename dialog -->
+    <string name="rename_dialog_title">പേരുമാറ്റുക</string>
+    <string name="rename_dialog_label">പുതിയ പേര്</string>
+
+    <!-- Open-as dialog -->
+    <string name="open_as_dialog_title">ഇതായി തുറക്കുക</string>
+    <string name="open_as_text">ടെക്സ്റ്റ് ഫയൽ</string>
+    <string name="open_as_image">ഇമേജ് ഫയൽ</string>
+    <string name="open_as_audio">ഓഡിയോ ഫയൽ</string>
+    <string name="open_as_video">വീഡിയോ ഫയൽ</string>
+    <string name="open_as_other">മറ്റ് ഫയൽ</string>
+
+    <!-- Copy/Move folder picker -->
+    <string name="picker_copy_title">ഇതിലേക്ക് പകർത്തുക</string>
+    <string name="picker_move_title">ഇതിലേക്ക് നീക്കുക</string>
+    <string name="picker_root_app">ആപ്പ് സ്റ്റോറേജ്</string>
+    <string name="picker_root_device">ഉപകരണ സ്റ്റോറേജ്</string>
+    <string name="picker_copy_here">ഇവിടെ പകർത്തുക</string>
+    <string name="picker_move_here">ഇവിടെ നീക്കുക</string>
+    <string name="picker_empty">ഇവിടെ ഉപഫോൾഡറുകൾ ഇല്ല</string>
+    <string name="picker_device_permission">ഉപകരണ സ്റ്റോറേജ് ബ്രൗസ് ചെയ്യാൻ എല്ലാ-ഫയൽ ആക്സസ് അനുവദിക്കുക.</string>
+
+    <!-- Confirmation dialog -->
+    <string name="confirm_generic_title">സ്ഥിരീകരിക്കുക</string>
+    <string name="confirm_share">%1$s പങ്കിടണോ?</string>
+    <string name="confirm_share_multi">%1$d ഇനങ്ങൾ പങ്കിടണോ?</string>
+    <string name="confirm_hide">%1$s മറയ്ക്കണോ? \"മറഞ്ഞ ഫയലുകൾ കാണിക്കുക\" ഓൺ അല്ലാത്തപ്പോൾ ഇത് ഒരു ഡോട്ടോടെ തുടങ്ങി മറഞ്ഞിരിക്കും.</string>
+    <string name="confirm_hide_multi">%1$d ഇനങ്ങൾ മറയ്ക്കണോ? അവ ഒരു ഡോട്ടോടെ തുടങ്ങും.</string>
+    <string name="confirm_unhide">%1$s വെളിപ്പെടുത്തണോ? മുൻനിര ഡോട്ട് നീക്കം ചെയ്യും.</string>
+    <string name="confirm_create_shortcut">%1$s-നായി ഒരു ഹോം-സ്ക്രീൻ കുറുക്കുവഴി ഉണ്ടാക്കണോ?</string>
+    <string name="confirm_copy_path">%1$s-ന്റെ പൂർണ്ണ പാത് ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തണോ?</string>
+    <string name="confirm_set_as">%1$s ഇതായി സജ്ജമാക്കണോ… (വാൾപേപ്പർ, കോൺടാക്റ്റ് ഫോട്ടോ മുതലായവ)?</string>
+    <string name="confirm_open_with">%1$s മറ്റൊരു ആപ്പ് ഉപയോഗിച്ച് തുറക്കണോ?</string>
+    <string name="confirm_select_all">ഈ ഫോൾഡറിലെ എല്ലാ ഇനങ്ങളും തിരഞ്ഞെടുക്കണോ?</string>
+    <string name="confirm_compress">%1$s ഒരു ZIP ആർക്കൈവിലേക്ക് കംപ്രസ് ചെയ്യണോ?</string>
+    <string name="confirm_compress_multi">%1$d ഇനങ്ങൾ ഒരു ZIP ആർക്കൈവിലേക്ക് കംപ്രസ് ചെയ്യണോ?</string>
+    <string name="confirm_decompress">%1$s ഒരു പുതിയ ഫോൾഡറിലേക്ക് എക്സ്ട്രാക്റ്റ് ചെയ്യണോ?</string>
+    <string name="confirm_lock_folder">%1$s ലോക്ക് ചെയ്ത് സുരക്ഷിതമാക്കണോ? തുറക്കാൻ ഐഡന്റിറ്റി പരിശോധന ആവശ്യമാണ്.</string>
+    <string name="confirm_remove_shield">%1$s-ൽ നിന്ന് സുരക്ഷാ ഷീൽഡ് നീക്കം ചെയ്യണോ?</string>
+    <string name="confirm_move_vault_action">%1$s ബയോമെട്രിക് വോൾട്ടിലേക്ക് നീക്കണോ?</string>
+    <string name="confirm_move_vault_action_multi">%1$d ഫയലുകൾ ബയോമെട്രിക് വോൾട്ടിലേക്ക് നീക്കണോ?</string>
 
     <!-- File details dialog -->
     <string name="detail_type">തരം</string>
@@ -154,6 +218,10 @@
     <string name="detail_modified">പരിഷ്കരിച്ചത്</string>
     <string name="detail_secured">സുരക്ഷിതം</string>
     <string name="detail_folder">ഫോൾഡർ</string>
+    <string name="detail_count">എണ്ണം</string>
+    <string name="detail_files">ഫയലുകൾ</string>
+    <string name="detail_folders">ഫോൾഡറുകൾ</string>
+    <string name="detail_files_and_folders">ഫയലുകളും ഫോൾഡറുകളും</string>
 
     <!-- Create folder / file / zip dialogs -->
     <string name="dialog_create_folder_title">പുതിയ ഫോൾഡർ സൃഷ്ടിക്കുക</string>
@@ -172,8 +240,10 @@
     <string name="unlock_folder_subtitle">\'%1$s\' എന്നതിന്റെ സംരക്ഷിത ഉള്ളടക്കം കാണാൻ ദയവായി പ്രാമാണീകരിക്കുക</string>
     <string name="confirm_move_title">നീക്കം ലോക്ക് സ്ഥിരീകരിക്കുക</string>
     <string name="confirm_move_subtitle">സുരക്ഷാ പരിശോധന പ്രവർത്തനക്ഷമമാണ്. \'%1$s\' വോൾട്ടിലേക്ക് സുരക്ഷിതമായി നീക്കാൻ പ്രാമാണീകരിക്കുക.</string>
+    <string name="confirm_move_subtitle_multi">സുരക്ഷാ പരിശോധന പ്രവർത്തനക്ഷമമാണ്. തിരഞ്ഞെടുത്ത %1$d ഇനങ്ങൾ വോൾട്ടിലേക്ക് സുരക്ഷിതമായി നീക്കാൻ പ്രാമാണീകരിക്കുക.</string>
     <string name="confirm_delete_title">ഇല്ലാതാക്കൽ ലോക്ക് സ്ഥിരീകരിക്കുക</string>
     <string name="confirm_delete_subtitle">സുരക്ഷാ പരിശോധന പ്രവർത്തനക്ഷമമാണ്. \'%1$s\' ഇല്ലാതാക്കാൻ പ്രാമാണീകരിക്കുക</string>
+    <string name="confirm_delete_subtitle_multi">സുരക്ഷാ പരിശോധന പ്രവർത്തനക്ഷമമാണ്. തിരഞ്ഞെടുത്ത %1$d ഇനങ്ങൾ ഇല്ലാതാക്കാൻ പ്രാമാണീകരിക്കുക.</string>
     <string name="auth_passcode_title">സുരക്ഷാ പാസ്‌കോഡ് പരിശോധന</string>
     <string name="auth_enter_app_pin">ആപ്പ് പിൻ നൽകുക</string>
     <string name="auth_incorrect_passcode">തെറ്റായ പാസ്‌കോഡ്. വീണ്ടും ശ്രമിക്കുക.</string>
@@ -191,6 +261,21 @@
     <string name="settings_security_subtitle">പാസ്‌കോഡ്, ആപ്പ് ലോക്ക് &amp; ഡാറ്റ പരിരക്ഷ</string>
     <string name="settings_about_title">Vault Files-നെ കുറിച്ച്</string>
     <string name="settings_about_subtitle">രചയിതാവ്, ബിൽഡ് വിശദാംശങ്ങൾ &amp; ആപ്പ് വിവരങ്ങൾ</string>
+    <string name="settings_help_title">സഹായം &amp; വിവരങ്ങൾ</string>
+    <string name="settings_help_subtitle">കംപ്രഷൻ, സുരക്ഷിതമാക്കൽ &amp; സാധാരണ ചോദ്യങ്ങൾ</string>
+    <string name="settings_permissions_title">അനുമതികൾ</string>
+    <string name="settings_permissions_subtitle">ഈ ആപ്പ് ഉപയോഗിക്കുന്ന അനുമതികൾ</string>
+    <string name="permissions_title">ആപ്പ് അനുമതികൾ</string>
+    <string name="permissions_intro">Vault Files ഉപയോഗിക്കുന്ന അനുമതികളാണ് ഇവ — ആപ്പ് നേരിട്ട് പ്രഖ്യാപിക്കുന്നവയും അത് ആശ്രയിക്കുന്ന ലൈബ്രറികൾ ചേർക്കുന്നവയും ഉൾപ്പെടെ.</string>
+    <string name="permissions_section_declared">ഈ ആപ്പ് പ്രഖ്യാപിച്ചവ</string>
+    <string name="permissions_section_implicit">ലൈബ്രറികളും സിസ്റ്റവും ചേർത്തവ</string>
+    <string name="permissions_status_granted">അനുവദിച്ചു</string>
+    <string name="permissions_status_denied">അനുവദിച്ചിട്ടില്ല</string>
+    <string name="permissions_empty">അനുമതി വിവരങ്ങളൊന്നും ലഭ്യമല്ല</string>
+    <string name="perm_read_storage">സ്റ്റോറേജ് വായിക്കുക</string>
+    <string name="perm_write_storage">സ്റ്റോറേജിൽ എഴുതുക</string>
+    <string name="perm_manage_storage">എല്ലാ ഫയലുകളും കൈകാര്യം ചെയ്യുക</string>
+    <string name="perm_install_packages">ആപ്പ് ഇൻസ്റ്റാളുകൾ അഭ്യർത്ഥിക്കുക</string>
     <string name="help_compression_q">കംപ്രഷൻ എങ്ങനെ പ്രവർത്തിക്കുന്നു?</string>
     <string name="help_compression_a">ഫയൽ ഓപ്ഷനുകളിൽ \'Compress to ZIP\' ടാപ്പ് ചെയ്യുക. സ്രോതസ്സിനൊപ്പം ഒരു സ്റ്റാൻഡേർഡ് കംപ്രസ് ചെയ്ത ഫോൾഡർ സൃഷ്ടിക്കപ്പെടുന്നു, വലുപ്പം ലാഭിക്കുന്നു. ഏതെങ്കിലും .zip നേരിട്ട് ക്ലിക്ക് ചെയ്ത് ഡീകംപ്രസ് ചെയ്യുക.</string>
     <string name="help_securing_q">ഫോൾഡർ സുരക്ഷിതമാക്കൽ എന്താണ്?</string>
@@ -279,6 +364,7 @@
     <string name="msg_deleted">ഇല്ലാതാക്കി: %1$s</string>
     <string name="msg_delete_failed">%1$s ഇല്ലാതാക്കാനായില്ല</string>
     <string name="msg_zip_success">%1$s വിജയകരമായി %2$s-ലേക്ക് സിപ്പ് ചെയ്തു</string>
+    <string name="msg_zip_success_multi">%1$d ഇനങ്ങൾ %2$s-ലേക്ക് കംപ്രസ് ചെയ്തു</string>
     <string name="msg_zip_failed">സിപ്പ് ആർക്കൈവ് സൃഷ്ടിക്കാനായില്ല.</string>
     <string name="msg_extract_success">%1$s-ന്റെ ഉള്ളടക്കം വിജയകരമായി എക്സ്ട്രാക്റ്റ് ചെയ്തു</string>
     <string name="msg_extract_failed">സിപ്പ് ആർക്കൈവ് എക്സ്ട്രാക്റ്റ് ചെയ്യാനായില്ല.</string>
@@ -310,17 +396,42 @@
     <string name="msg_source_sandbox">സ്റ്റോറേജ് സ്രോതസ്സ് ആപ്പ് സാൻഡ്‌ബോക്സിലേക്ക് മാറ്റി</string>
     <string name="msg_cannot_launch_settings_files">സിസ്റ്റം ക്രമീകരണങ്ങൾ തുറക്കാനായില്ല. ദയവായി ഫയൽ അനുമതി സ്വമേധയാ നൽകുക.</string>
     <string name="msg_cannot_launch_settings">ക്രമീകരണങ്ങൾ തുറക്കാനായില്ല. ദയവായി അനുമതി സ്വമേധയാ പ്രവർത്തനക്ഷമമാക്കുക.</string>
-    <string name="msg_viewing_file">കാണുന്നു: %1$s (%2$s)</string>
+    <string name="msg_viewing_file">%1$s (%2$s)</string>
+    <string name="msg_no_app_to_open">%1$s തുറക്കാൻ ആപ്പ് കണ്ടെത്തിയില്ല</string>
+    <string name="msg_open_failed">%1$s തുറക്കാനായില്ല</string>
+    <string name="msg_install_permission_needed">ഈ ആപ്പിന് ആപ്പുകൾ ഇൻസ്റ്റാൾ ചെയ്യാൻ അനുമതി നൽകുക, തുടർന്ന് APK വീണ്ടും ടാപ്പ് ചെയ്യുക.</string>
+    <string name="msg_install_failed">%1$s-നായി ഇൻസ്റ്റാളർ ആരംഭിക്കാനായില്ല</string>
     <string name="msg_configure_pin_tab">ദയവായി ക്രമീകരണ ടാബിൽ സുരക്ഷാ പാസ്‌കോഡ് പിൻ ക്രമീകരിക്കുക.</string>
     <string name="msg_configure_pin_settings">ദയവായി ക്രമീകരണങ്ങളിൽ സുരക്ഷാ പാസ്‌കോഡ് പിൻ ക്രമീകരിക്കുക.</string>
     <string name="msg_pin_required_protection">പരിരക്ഷ പ്രവർത്തനക്ഷമമാക്കുന്നതിന് മുമ്പ് പിൻ ക്രമീകരണം ആവശ്യമാണ്.</string>
     <string name="msg_setup_pin_fallback">ഫാൾബാക്ക് പാസ്‌കോഡിനായി ക്രമീകരണങ്ങളിൽ ആപ്പ് സുരക്ഷാ പിൻ സജ്ജമാക്കുക.</string>
     <string name="msg_vault_requires_pin">വോൾട്ട് ലോക്കിന് ഒരു സുരക്ഷാ പിൻ ഫാൾബാക്ക് സജ്ജീകരണം ആവശ്യമാണ്. ക്രമീകരണങ്ങൾ കാണുക.</string>
+    <string name="msg_renamed">%1$s-ന്റെ പേര് %2$s ആയി മാറ്റി</string>
+    <string name="msg_rename_failed">%1$s-ന്റെ പേരുമാറ്റാനായില്ല (പേര് ഉപയോഗത്തിലുണ്ട് അല്ലെങ്കിൽ അസാധു)</string>
+    <string name="msg_hidden">%1$d ഇനം മറച്ചു</string>
+    <string name="msg_unhidden">%1$d ഇനം വെളിപ്പെടുത്തി</string>
+    <string name="msg_hidden_mixed">%1$d മറച്ചു, %2$d വെളിപ്പെടുത്തി</string>
+    <string name="msg_hide_failed">മറഞ്ഞ അവസ്ഥ മാറ്റാനായില്ല</string>
+    <string name="msg_copied">%1$d ഇനം %2$s-ലേക്ക് പകർത്തി</string>
+    <string name="msg_copy_failed">പകർത്താനായില്ല (ലക്ഷ്യസ്ഥാനത്ത് പേര് ഇതിനകം ഉണ്ടാകാം)</string>
+    <string name="msg_moved">%1$d ഇനം %2$s-ലേക്ക് നീക്കി</string>
+    <string name="msg_move_failed">നീക്കാനായില്ല (ലക്ഷ്യസ്ഥാനത്ത് പേര് ഇതിനകം ഉണ്ടാകാം)</string>
+    <string name="msg_path_copied">പാത് ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തി</string>
+    <string name="msg_shortcut_created">%1$s-നായി കുറുക്കുവഴി അഭ്യർത്ഥന അയച്ചു</string>
+    <string name="msg_shortcut_unsupported">ഈ ലോഞ്ചർ പിൻ ചെയ്ത കുറുക്കുവഴികളെ പിന്തുണയ്ക്കുന്നില്ല</string>
+    <string name="msg_cannot_share_folder">ഫോൾഡറുകൾ പങ്കിടാനാവില്ല</string>
+    <string name="msg_share_failed">%1$s പങ്കിടാനായില്ല</string>
+    <string name="msg_set_as_failed">%1$s സജ്ജമാക്കാനായില്ല</string>
+    <string name="msg_set_as_image_only">ഇമേജ് ഫയലുകൾ മാത്രമേ വാൾപേപ്പറോ ഫോട്ടോയോ ആയി സജ്ജമാക്കാനാകൂ</string>
 
     <!-- ===== Plurals ===== -->
     <plurals name="folder_count">
         <item quantity="one">%1$d ഫോൾഡർ</item>
         <item quantity="other">%1$d ഫോൾഡറുകൾ</item>
+    </plurals>
+    <plurals name="file_count">
+        <item quantity="one">%1$d ഫയൽ</item>
+        <item quantity="other">%1$d ഫയലുകൾ</item>
     </plurals>
     <plurals name="item_count">
         <item quantity="one">%1$d ഇനം</item>

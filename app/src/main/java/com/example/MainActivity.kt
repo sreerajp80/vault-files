@@ -1,9 +1,15 @@
 package com.example
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -25,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.ui.FileExplorerScreen
+import com.example.ui.hasAllFilesPermission
 import com.example.ui.SecureVaultScreen
 import com.example.ui.SettingsScreen
 import com.example.ui.StorageAnalyzerScreen
@@ -88,6 +95,38 @@ class MainActivity : FragmentActivity() {
                         onUnlocked = { isAppLocked = false }
                     )
                 } else {
+                    // First-launch storage permission request. Fires once (guarded by a persisted
+                    // flag), only after the app is unlocked and only if access isn't already held.
+                    // On R+ this opens the system All-files-access screen (no in-app dialog exists
+                    // for it); pre-R it shows the runtime READ_EXTERNAL_STORAGE dialog.
+                    val context = LocalContext.current
+                    val storagePermissionRequested by viewModel.storagePermissionRequested.collectAsState()
+                    val storagePermLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.RequestPermission()
+                    ) { /* status is re-read on resume by the screens that need it */ }
+                    LaunchedEffect(storagePermissionRequested) {
+                        if (storagePermissionRequested == false && !hasAllFilesPermission(context)) {
+                            viewModel.markStoragePermissionRequested()
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                try {
+                                    context.startActivity(
+                                        Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                            data = Uri.parse("package:${context.packageName}")
+                                        }
+                                    )
+                                } catch (e: Exception) {
+                                    try {
+                                        context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                                    } catch (ex: Exception) {
+                                        // No settings activity available; the in-app Files-tab button remains.
+                                    }
+                                }
+                            } else {
+                                storagePermLauncher.launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                            }
+                        }
+                    }
+
                     var activeTabIndex by rememberSaveable { mutableStateOf(1) } // Default to Files explorer tab
 
                     // Back from any non-main tab returns to the main Files tab rather than closing

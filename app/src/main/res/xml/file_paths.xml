@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- App-private internal storage (sandbox files live under filesDir/Storage). -->
+    <files-path name="internal_files" path="." />
+    <cache-path name="internal_cache" path="." />
+    <!-- App-private external storage. -->
+    <external-files-path name="external_files" path="." />
+    <external-cache-path name="external_cache" path="." />
+    <!-- Shared/device external storage (device source mode via MANAGE_EXTERNAL_STORAGE). -->
+    <external-path name="external_storage" path="." />
+    <!-- Catch-all so any real file path resolved by the explorer can be shared. -->
+    <root-path name="root" path="." />
+</paths>

@@ -37,8 +37,8 @@ android {
     applicationId = "in.sreerajp.vault_files"
     minSdk = 24
     targetSdk = 36
-    versionCode = 14
-    versionName = "14.9"
+    versionCode = 16
+    versionName = "16.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
