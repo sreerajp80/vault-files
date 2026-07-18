@@ -1,6 +1,7 @@
 package com.example.data
 
 import android.content.Context
+import android.net.Uri
 import com.example.utils.ZipUtility
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -444,6 +445,82 @@ class StorageRepository(
             e.printStackTrace()
             false
         }
+    }
+
+    // --- Importing Shared-in Content (from other apps' share sheet) ---
+
+    /**
+     * Copies the bytes behind a shared content [uri] into [destDir], naming the new file
+     * [displayName]. Content shared from another app arrives as a `Uri`, not a real [File], so the
+     * bytes are read through the [Context.getContentResolver] stream. If a file of the same name
+     * already exists, a numeric suffix is added (e.g. `report (1).pdf`) so nothing is overwritten.
+     * Returns false on any I/O failure.
+     */
+    suspend fun importUriToFolder(uri: Uri, displayName: String, destDir: File): Boolean = withContext(Dispatchers.IO) {
+        if (!destDir.exists() && !destDir.mkdirs()) return@withContext false
+        val target = uniqueDestFile(destDir, displayName)
+        return@withContext try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                target.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return@withContext false
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try { if (target.exists()) target.delete() } catch (_: Exception) {}
+            false
+        }
+    }
+
+    /**
+     * Copies the bytes behind a shared content [uri] straight into the encrypted vault, recording a
+     * [VaultFile] row under the original [displayName]. Like [moveFileToVault] but the source is a
+     * `Uri` from another app, so there is no original file on disk to delete afterwards. Returns
+     * false on any I/O failure.
+     */
+    suspend fun importUriToVault(uri: Uri, displayName: String): Boolean = withContext(Dispatchers.IO) {
+        val vaultFileName = "vault_" + UUID.randomUUID().toString() + ".secured"
+        val destinationInVault = File(vaultStorageRoot, vaultFileName)
+        return@withContext try {
+            val bytesWritten = context.contentResolver.openInputStream(uri)?.use { input ->
+                destinationInVault.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return@withContext false
+
+            val vaultFile = VaultFile(
+                originalName = displayName,
+                vaultFileName = vaultFileName,
+                fileSize = bytesWritten,
+                category = getCategoryForFile(File(displayName))
+            )
+            vaultFileDao.insertVaultFile(vaultFile)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try { if (destinationInVault.exists()) destinationInVault.delete() } catch (_: Exception) {}
+            false
+        }
+    }
+
+    /**
+     * Returns a [File] inside [destDir] that does not yet exist: [name] as-is when free, otherwise
+     * `name (1).ext`, `name (2).ext`, … keeping any extension intact.
+     */
+    private fun uniqueDestFile(destDir: File, name: String): File {
+        val safeName = name.ifBlank { "shared_file" }
+        var candidate = File(destDir, safeName)
+        if (!candidate.exists()) return candidate
+        val dot = safeName.lastIndexOf('.')
+        val base = if (dot > 0) safeName.substring(0, dot) else safeName
+        val ext = if (dot > 0) safeName.substring(dot) else ""
+        var i = 1
+        while (candidate.exists()) {
+            candidate = File(destDir, "$base ($i)$ext")
+            i++
+        }
+        return candidate
     }
 
     /**

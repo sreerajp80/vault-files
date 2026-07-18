@@ -190,6 +190,17 @@
     <string name="picker_empty">No subfolders here</string>
     <string name="picker_device_permission">Grant all-files access to browse device storage.</string>
 
+    <!-- Files shared into the app from another app's share sheet -->
+    <string name="share_dest_title">Save shared file(s)</string>
+    <string name="share_dest_message">Where should %1$d file(s) be saved?</string>
+    <string name="share_dest_vault">Encrypted vault</string>
+    <string name="share_dest_choose_folder">Choose a folder…</string>
+    <string name="share_pick_folder_title">Save shared file(s) to</string>
+    <string name="share_save_here">Save here</string>
+    <string name="msg_shared_saved_folder">Saved %1$d file(s) to %2$s</string>
+    <string name="msg_shared_saved_vault">Saved %1$d file(s) to the vault</string>
+    <string name="msg_shared_save_failed">Could not save the shared file(s).</string>
+
     <!-- Confirmation dialog -->
     <string name="confirm_generic_title">Confirm</string>
     <string name="confirm_share">Share %1$s?</string>

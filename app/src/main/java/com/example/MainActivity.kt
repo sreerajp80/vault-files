@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -28,11 +29,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.IntentCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.ui.FileExplorerScreen
+import com.example.ui.FolderPickerDialog
 import com.example.ui.hasAllFilesPermission
 import com.example.ui.SecureVaultScreen
+import com.example.ui.SharedImport
 import com.example.ui.SettingsScreen
 import com.example.ui.StorageAnalyzerScreen
 import com.example.ui.StorageViewModel
@@ -48,6 +52,10 @@ class MainActivity : FragmentActivity() {
         
         // Initialize the centralized StorageViewModel
         val viewModel = ViewModelProvider(this)[StorageViewModel::class.java]
+
+        // If the app was launched by another app sharing a file into it, capture that now. The
+        // Compose UI shows a "where to save?" dialog once the user is past the app-lock gate.
+        handleShareIntent(intent, viewModel)
 
         setContent {
             val themePreference by viewModel.themePreference.collectAsState()
@@ -124,6 +132,50 @@ class MainActivity : FragmentActivity() {
                             } else {
                                 storagePermLauncher.launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
                             }
+                        }
+                    }
+
+                    // Files shared into the app from another app's share sheet. Once unlocked, ask
+                    // the user each time where to save them: the encrypted vault or a folder.
+                    val pendingShares by viewModel.pendingSharedImports.collectAsState()
+                    var showShareFolderPicker by remember { mutableStateOf(false) }
+                    pendingShares?.let { shares ->
+                        if (showShareFolderPicker) {
+                            FolderPickerDialog(
+                                title = stringResource(R.string.share_pick_folder_title),
+                                confirmLabel = stringResource(R.string.share_save_here),
+                                viewModel = viewModel,
+                                hasDevicePermission = hasAllFilesPermission(context),
+                                onRequestDevicePermission = {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                        try {
+                                            context.startActivity(
+                                                Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                                    data = Uri.parse("package:${context.packageName}")
+                                                }
+                                            )
+                                        } catch (e: Exception) {
+                                            try {
+                                                context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                                            } catch (ex: Exception) {
+                                                // No settings screen available; the app root stays browsable.
+                                            }
+                                        }
+                                    }
+                                },
+                                onConfirm = { destDir ->
+                                    viewModel.importSharedToFolder(shares, destDir)
+                                    showShareFolderPicker = false
+                                },
+                                onDismiss = { showShareFolderPicker = false }
+                            )
+                        } else {
+                            ShareDestinationDialog(
+                                count = shares.size,
+                                onSaveToVault = { viewModel.importSharedToVault(shares) },
+                                onChooseFolder = { showShareFolderPicker = true },
+                                onDismiss = { viewModel.clearPendingSharedImports() }
+                            )
                         }
                     }
 
@@ -216,6 +268,57 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    // A share can arrive while the app is already running (single-activity). Android delivers it
+    // here instead of a fresh onCreate, so re-read it and hand the files to the same ViewModel.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val viewModel = ViewModelProvider(this)[StorageViewModel::class.java]
+        handleShareIntent(intent, viewModel)
+    }
+
+    /**
+     * Pulls any files shared into the app (ACTION_SEND / ACTION_SEND_MULTIPLE) out of [intent] and
+     * hands them to the ViewModel as pending imports. Does nothing for a normal launch.
+     */
+    private fun handleShareIntent(intent: Intent?, viewModel: StorageViewModel) {
+        if (intent == null) return
+        val uris: List<Uri> = when (intent.action) {
+            Intent.ACTION_SEND -> {
+                val uri = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                if (uri != null) listOf(uri) else emptyList()
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                    ?: emptyList()
+            }
+            else -> emptyList()
+        }
+        if (uris.isEmpty()) return
+        viewModel.setPendingSharedImports(uris.map { SharedImport(it, resolveDisplayName(it)) })
+    }
+
+    /**
+     * Best-effort file name for a shared content [uri]: the provider's DISPLAY_NAME when available,
+     * otherwise the last path segment, otherwise a generic fallback.
+     */
+    private fun resolveDisplayName(uri: Uri): String {
+        try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (idx >= 0) {
+                        val name = cursor.getString(idx)
+                        if (!name.isNullOrBlank()) return name
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() } ?: "shared_file"
     }
 }
 
@@ -365,4 +468,32 @@ fun AppLockScreen(
             }
         }
     }
+}
+
+/**
+ * Asks the user where to save files that were shared into the app: the encrypted vault, or a
+ * folder they pick. [count] is how many files are being saved (drives singular/plural wording).
+ */
+@Composable
+fun ShareDestinationDialog(
+    count: Int,
+    onSaveToVault: () -> Unit,
+    onChooseFolder: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.share_dest_title)) },
+        text = { Text(stringResource(R.string.share_dest_message, count)) },
+        confirmButton = {
+            TextButton(onClick = onChooseFolder) {
+                Text(stringResource(R.string.share_dest_choose_folder))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onSaveToVault) {
+                Text(stringResource(R.string.share_dest_vault))
+            }
+        }
+    )
 }

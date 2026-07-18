@@ -1,6 +1,7 @@
 package com.example.ui
 
 import android.app.Application
+import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,9 @@ import java.io.File
 
 /** A decrypted secure note surfaced to the viewer. [file] is the backing `.securenote` to save into. */
 data class OpenNote(val name: String, val content: String, val file: File)
+
+/** One file shared into the app from another app's share sheet: its content [uri] and display [name]. */
+data class SharedImport(val uri: Uri, val name: String)
 
 /** UI state for the full-screen text-file preview; null when no preview is open. */
 sealed interface TextPreviewUi {
@@ -141,6 +145,12 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
     // Simple Snack message dispatcher for Compose scaffold to display toasts
     private val _userMessage = MutableSharedFlow<String>()
     val userMessage: SharedFlow<String> = _userMessage.asSharedFlow()
+
+    // Files shared into the app from another app's share sheet, waiting for the user to pick a
+    // destination. Null when there is nothing pending. Held here (not in the Activity) so the
+    // choice survives the app-lock gate until the user is unlocked.
+    private val _pendingSharedImports = MutableStateFlow<List<SharedImport>?>(null)
+    val pendingSharedImports: StateFlow<List<SharedImport>?> = _pendingSharedImports.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -603,6 +613,50 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
 
     fun markVaultUnlockedState(unlocked: Boolean) {
         _isVaultUnlocked.value = unlocked
+    }
+
+    // --- Importing Shared-in Files (from other apps' share sheet) ---
+
+    /** Records files shared into the app so the UI can ask the user where to save them. */
+    fun setPendingSharedImports(imports: List<SharedImport>) {
+        if (imports.isEmpty()) return
+        _pendingSharedImports.value = imports
+    }
+
+    /** Clears the pending shared files (user cancelled, or the import finished). */
+    fun clearPendingSharedImports() {
+        _pendingSharedImports.value = null
+    }
+
+    /** Saves each pending shared file into [destDir], then clears the pending state. */
+    fun importSharedToFolder(imports: List<SharedImport>, destDir: File) {
+        if (imports.isEmpty()) return
+        viewModelScope.launch {
+            val ok = imports.count { repository.importUriToFolder(it.uri, it.name, destDir) }
+            if (ok > 0) {
+                dispatchMessage(string(R.string.msg_shared_saved_folder, ok, destDir.name))
+            } else {
+                dispatchMessage(string(R.string.msg_shared_save_failed))
+            }
+            clearPendingSharedImports()
+            loadFilesInDirectory(_currentDirectory.value)
+            refreshStorageStats()
+        }
+    }
+
+    /** Saves each pending shared file straight into the encrypted vault, then clears the pending state. */
+    fun importSharedToVault(imports: List<SharedImport>) {
+        if (imports.isEmpty()) return
+        viewModelScope.launch {
+            val ok = imports.count { repository.importUriToVault(it.uri, it.name) }
+            if (ok > 0) {
+                dispatchMessage(string(R.string.msg_shared_saved_vault, ok))
+            } else {
+                dispatchMessage(string(R.string.msg_shared_save_failed))
+            }
+            clearPendingSharedImports()
+            refreshStorageStats()
+        }
     }
 
     // --- Preference Handling ---

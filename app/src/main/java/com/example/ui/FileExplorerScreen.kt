@@ -2759,6 +2759,33 @@ fun MoveCopyPickerDialog(
     onConfirm: (File) -> Unit,
     onDismiss: () -> Unit
 ) {
+    FolderPickerDialog(
+        title = stringResource(if (request.isMove) R.string.picker_move_title else R.string.picker_copy_title),
+        confirmLabel = stringResource(if (request.isMove) R.string.picker_move_here else R.string.picker_copy_here),
+        viewModel = viewModel,
+        hasDevicePermission = hasDevicePermission,
+        onRequestDevicePermission = onRequestDevicePermission,
+        onConfirm = onConfirm,
+        onDismiss = onDismiss
+    )
+}
+
+/**
+ * A reusable folder-browser dialog. Lets the user browse the app sandbox and (with all-files
+ * permission) the device storage, then confirm the current folder. Backs both the move/copy
+ * destination picker and the "share into a folder" import flow — [title] and [confirmLabel] make
+ * it read correctly for each caller.
+ */
+@Composable
+fun FolderPickerDialog(
+    title: String,
+    confirmLabel: String,
+    viewModel: StorageViewModel,
+    hasDevicePermission: Boolean,
+    onRequestDevicePermission: () -> Unit,
+    onConfirm: (File) -> Unit,
+    onDismiss: () -> Unit
+) {
     val appRoot = viewModel.appStorageRoot
     var rootMode by remember { mutableStateOf("app") }
     val currentRoot = if (rootMode == "device") viewModel.deviceStorageRoot else appRoot
@@ -2771,7 +2798,7 @@ fun MoveCopyPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(if (request.isMove) R.string.picker_move_title else R.string.picker_copy_title)) },
+        title = { Text(title) },
         text = {
             Column {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -2841,7 +2868,7 @@ fun MoveCopyPickerDialog(
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(currentDir) }) {
-                Text(stringResource(if (request.isMove) R.string.picker_move_here else R.string.picker_copy_here))
+                Text(confirmLabel)
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
