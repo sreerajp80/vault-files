@@ -15,15 +15,15 @@ library.
   (`AppLockScreen`) when enabled, then a `Scaffold` with a 4-tab `NavigationBar`. **Tabs are
   switched by an integer index (`activeTabIndex`), not a NavController.** The four tabs map to:
   `StorageAnalyzerScreen`, `FileExplorerScreen`, `SecureVaultScreen`, `SettingsScreen` (all under
-  `com.example.ui`).
+  `in.sreerajp.vault_files.ui`).
 
-- **`StorageViewModel`** (`AndroidViewModel`, `com.example.ui`) — the single source of truth for
+- **`StorageViewModel`** (`AndroidViewModel`, `in.sreerajp.vault_files.ui`) — the single source of truth for
   the entire app. Holds all UI state as `StateFlow`s (current directory, file listing, storage
   stats, secured folders, vault files, every settings toggle, and per-session unlock flags).
   Exposes user-facing one-shot messages via a `MutableSharedFlow<String>` (`userMessage`), which
   `MainActivity` collects to show Toast + Snackbar. All screens receive this one ViewModel.
 
-- **`StorageRepository`** (`com.example.data`) — all file I/O and persistence, every method on
+- **`StorageRepository`** (`in.sreerajp.vault_files.data`) — all file I/O and persistence, every method on
   `Dispatchers.IO`. Two real on-disk roots under `filesDir`: `Storage/` (user-visible sandbox)
   and `Vault/` (moved files, renamed to opaque `vault_<uuid>.secured`). Also fabricates
   external-storage listings (`getFilesAndFoldersInDirectory`) and storage stats

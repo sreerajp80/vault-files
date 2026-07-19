@@ -14,8 +14,8 @@ Java/Kotlin **17**, `compileSdk`/`targetSdk` **36**, `minSdk` **24**. Compose + 
 Run a single test class / method:
 
 ```bash
-./gradlew testDebugUnitTest --tests "com.example.ExampleRobolectricTest"
-./gradlew testDebugUnitTest --tests "com.example.GreetingScreenshotTest.greeting_screenshot"
+./gradlew testDebugUnitTest --tests "in.sreerajp.vault_files.ExampleRobolectricTest"
+./gradlew testDebugUnitTest --tests "in.sreerajp.vault_files.GreetingScreenshotTest.greeting_screenshot"
 ```
 
 Screenshot tests use **Roborazzi** (golden images under `app/src/test/screenshots/`):
@@ -38,9 +38,12 @@ Screenshot tests use **Roborazzi** (golden images under `app/src/test/screenshot
 - Gradle **configuration cache and caching are on** (`gradle.properties`); if you change build
   logic and see stale behavior, add `--no-configuration-cache`.
 
-## Namespace caveat
+## Package naming
 
-Three different identifiers are in play — don't conflate them:
-- Source package: `com.example` (all `.kt` files live here)
-- Build `namespace` (R class / BuildConfig): `in.sreerajp.vault_files`
-- `applicationId` (installed package): `com.aistudio.filevault.kxmpzq`
+All three identifiers are now the same — `in.sreerajp.vault_files`:
+- Source package (all `.kt` files live here)
+- Build `namespace` (R class / BuildConfig)
+- `applicationId` (installed package)
+
+`in` is a Kotlin keyword, so `package` lines and imports of our own code must backtick it:
+`` package `in`.sreerajp.vault_files.ui ``. The folder on disk is plain `in`.

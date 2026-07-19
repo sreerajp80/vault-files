@@ -39,10 +39,22 @@ manager: storage analytics, file explorer, password/biometric-shielded folders, 
   files, synthesized virtual external storage, no real encryption). Don't assume a feature touches
   real user files.
 
-## Namespace caveat
+## Package naming
 
-Two different identifiers — don't conflate them: the source package is still `com.example`, while
-the build `namespace` and `applicationId` are both `in.sreerajp.vault_files`.
+One identifier everywhere: the source package, the build `namespace`, and the `applicationId`
+are all `in.sreerajp.vault_files`.
+
+Note that `in` is a Kotlin keyword, so it must be backticked in source — in every `package`
+line and in every import of our own code:
+
+```kotlin
+package `in`.sreerajp.vault_files.ui
+import `in`.sreerajp.vault_files.data.StorageRepository
+```
+
+The folder on disk is plain `in` (no backticks). Classes in the root package
+(`MainActivity`, the tests) do not need to import `R` or `BuildConfig` — they are generated
+into that same package.
 
 ## Common commands
 
@@ -50,7 +62,7 @@ the build `namespace` and `applicationId` are both `in.sreerajp.vault_files`.
 ./gradlew assembleDebug          # build debug APK
 ./gradlew installDebug           # build + install on device/emulator
 ./gradlew testDebugUnitTest      # run JVM/Robolectric unit tests
-./gradlew testDebugUnitTest --tests "com.example.ExampleRobolectricTest"   # single test
+./gradlew testDebugUnitTest --tests "in.sreerajp.vault_files.ExampleRobolectricTest"   # single test
 ```
 
 Note: the `debug` build expects a `debug.keystore` at the project root, or you must remove the
