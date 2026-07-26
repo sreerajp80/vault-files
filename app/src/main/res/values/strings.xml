@@ -194,9 +194,14 @@
     <string name="share_dest_title">Save shared file(s)</string>
     <string name="share_dest_message">Where should %1$d file(s) be saved?</string>
     <string name="share_dest_vault">Encrypted vault</string>
+    <string name="share_dest_vault_subtitle">Store securely inside the encrypted app vault</string>
     <string name="share_dest_choose_folder">Choose a folder…</string>
+    <string name="share_dest_choose_folder_subtitle">Browse and pick a target destination folder</string>
     <string name="share_pick_folder_title">Save shared file(s) to</string>
     <string name="share_save_here">Save here</string>
+    <string name="share_bar_title">Save %1$d shared file(s)</string>
+    <string name="share_target_folder">To: %1$s</string>
+    <string name="picker_parent_folder">Parent folder</string>
     <string name="msg_shared_saved_folder">Saved %1$d file(s) to %2$s</string>
     <string name="msg_shared_saved_vault">Saved %1$d file(s) to the vault</string>
     <string name="msg_shared_save_failed">Could not save the shared file(s).</string>
@@ -444,6 +449,9 @@
         <item quantity="one">%1$d file</item>
         <item quantity="other">%1$d files</item>
     </plurals>
+    <!-- Shown for the app's root inside the system file picker. -->
+    <string name="documents_root_title">Vault Files</string>
+    <string name="documents_root_summary">App storage</string>
     <plurals name="item_count">
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>

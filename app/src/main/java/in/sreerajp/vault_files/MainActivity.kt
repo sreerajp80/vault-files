@@ -133,52 +133,18 @@ class MainActivity : FragmentActivity() {
                         }
                     }
 
-                    // Files shared into the app from another app's share sheet. Once unlocked, ask
-                    // the user each time where to save them: the encrypted vault or a folder.
+                    // Files shared into the app from another app's share sheet. Once unlocked, allow
+                    // the user to browse app screens (Files / Vault) and confirm with bottom bar.
                     val pendingShares by viewModel.pendingSharedImports.collectAsState()
-                    var showShareFolderPicker by remember { mutableStateOf(false) }
-                    pendingShares?.let { shares ->
-                        if (showShareFolderPicker) {
-                            FolderPickerDialog(
-                                title = stringResource(R.string.share_pick_folder_title),
-                                confirmLabel = stringResource(R.string.share_save_here),
-                                viewModel = viewModel,
-                                hasDevicePermission = hasAllFilesPermission(context),
-                                onRequestDevicePermission = {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                        try {
-                                            context.startActivity(
-                                                Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                                                    data = Uri.parse("package:${context.packageName}")
-                                                }
-                                            )
-                                        } catch (e: Exception) {
-                                            try {
-                                                context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
-                                            } catch (ex: Exception) {
-                                                // No settings screen available; the app root stays browsable.
-                                            }
-                                        }
-                                    }
-                                },
-                                onConfirm = { destDir ->
-                                    viewModel.importSharedToFolder(shares, destDir)
-                                    showShareFolderPicker = false
-                                },
-                                onDismiss = { showShareFolderPicker = false }
-                            )
-                        } else {
-                            ShareDestinationDialog(
-                                count = shares.size,
-                                onSaveToVault = { viewModel.importSharedToVault(shares) },
-                                onChooseFolder = { showShareFolderPicker = true },
-                                onDismiss = { viewModel.clearPendingSharedImports() }
-                            )
-                        }
-                    }
 
                     var activeTabIndex by rememberSaveable { mutableStateOf(1) } // Default to Files explorer tab
                     val isPickMode by viewModel.isPickMode.collectAsState()
+
+                    LaunchedEffect(pendingShares) {
+                        if (pendingShares != null && activeTabIndex != 1 && activeTabIndex != 2) {
+                            activeTabIndex = 1
+                        }
+                    }
 
                     LaunchedEffect(isPickMode) {
                         if (isPickMode) {
@@ -217,10 +183,14 @@ class MainActivity : FragmentActivity() {
 
                     // Back from any non-main tab returns to the main Files tab.
                     // If in pick-mode, pressing Back exits pick mode and cancels.
-                    BackHandler(enabled = isPickMode || activeTabIndex != 1) {
+                    // If in pending-share mode, pressing Back clears pending shares.
+                    BackHandler(enabled = isPickMode || activeTabIndex != 1 || pendingShares != null) {
                         if (isPickMode) {
                             viewModel.exitPickMode()
                             setResult(RESULT_CANCELED)
+                            finish()
+                        } else if (pendingShares != null) {
+                            viewModel.clearPendingSharedImports()
                             finish()
                         } else {
                             viewModel.clearCategoryFilter()
@@ -231,41 +201,66 @@ class MainActivity : FragmentActivity() {
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
                         bottomBar = {
-                            if (!isPickMode) {
-                                NavigationBar(
-                                    modifier = Modifier.testTag("app_bottom_nav_bar")
-                                ) {
-                                    NavigationBarItem(
-                                        selected = activeTabIndex == 0,
-                                        onClick = { activeTabIndex = 0 },
-                                        icon = { Icon(Icons.Default.Storage, contentDescription = stringResource(R.string.cd_storage_stats)) },
-                                        label = { Text(stringResource(R.string.nav_storage)) },
-                                        modifier = Modifier.testTag("nav_storage_tab")
-                                    )
-                                    NavigationBarItem(
-                                        selected = activeTabIndex == 1,
-                                        onClick = {
-                                            viewModel.clearCategoryFilter()
-                                            activeTabIndex = 1
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                pendingShares?.let { shares ->
+                                    val currentDir by viewModel.currentDirectory.collectAsState()
+                                    val targetName = if (activeTabIndex == 2) {
+                                        stringResource(R.string.share_dest_vault)
+                                    } else {
+                                        currentDir.name.ifEmpty { "/" }
+                                    }
+                                    ShareConfirmationBottomBar(
+                                        count = shares.size,
+                                        targetName = targetName,
+                                        onConfirm = {
+                                            if (activeTabIndex == 2) {
+                                                viewModel.importSharedToVault(shares) { finish() }
+                                            } else {
+                                                viewModel.importSharedToFolder(shares, currentDir) { finish() }
+                                            }
                                         },
-                                        icon = { Icon(Icons.Default.Folder, contentDescription = stringResource(R.string.cd_file_explorer)) },
-                                        label = { Text(stringResource(R.string.nav_files)) },
-                                        modifier = Modifier.testTag("nav_files_tab")
+                                        onDismiss = {
+                                            viewModel.clearPendingSharedImports()
+                                            finish()
+                                        }
                                     )
-                                    NavigationBarItem(
-                                        selected = activeTabIndex == 2,
-                                        onClick = { activeTabIndex = 2 },
-                                        icon = { Icon(Icons.Default.VpnKey, contentDescription = stringResource(R.string.cd_secure_vault)) },
-                                        label = { Text(stringResource(R.string.nav_vault)) },
-                                        modifier = Modifier.testTag("nav_vault_tab")
-                                    )
-                                    NavigationBarItem(
-                                        selected = activeTabIndex == 3,
-                                        onClick = { activeTabIndex = 3 },
-                                        icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.cd_settings_options)) },
-                                        label = { Text(stringResource(R.string.nav_settings)) },
-                                        modifier = Modifier.testTag("nav_settings_tab")
-                                    )
+                                }
+                                if (!isPickMode) {
+                                    NavigationBar(
+                                        modifier = Modifier.testTag("app_bottom_nav_bar")
+                                    ) {
+                                        NavigationBarItem(
+                                            selected = activeTabIndex == 0,
+                                            onClick = { activeTabIndex = 0 },
+                                            icon = { Icon(Icons.Default.Storage, contentDescription = stringResource(R.string.cd_storage_stats)) },
+                                            label = { Text(stringResource(R.string.nav_storage)) },
+                                            modifier = Modifier.testTag("nav_storage_tab")
+                                        )
+                                        NavigationBarItem(
+                                            selected = activeTabIndex == 1,
+                                            onClick = {
+                                                viewModel.clearCategoryFilter()
+                                                activeTabIndex = 1
+                                            },
+                                            icon = { Icon(Icons.Default.Folder, contentDescription = stringResource(R.string.cd_file_explorer)) },
+                                            label = { Text(stringResource(R.string.nav_files)) },
+                                            modifier = Modifier.testTag("nav_files_tab")
+                                        )
+                                        NavigationBarItem(
+                                            selected = activeTabIndex == 2,
+                                            onClick = { activeTabIndex = 2 },
+                                            icon = { Icon(Icons.Default.VpnKey, contentDescription = stringResource(R.string.cd_secure_vault)) },
+                                            label = { Text(stringResource(R.string.nav_vault)) },
+                                            modifier = Modifier.testTag("nav_vault_tab")
+                                        )
+                                        NavigationBarItem(
+                                            selected = activeTabIndex == 3,
+                                            onClick = { activeTabIndex = 3 },
+                                            icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.cd_settings_options)) },
+                                            label = { Text(stringResource(R.string.nav_settings)) },
+                                            modifier = Modifier.testTag("nav_settings_tab")
+                                        )
+                                    }
                                 }
                             }
                         },
@@ -531,29 +526,86 @@ fun AppLockScreen(
 }
 
 /**
- * Asks the user where to save files that were shared into the app: the encrypted vault, or a
- * folder they pick. [count] is how many files are being saved (drives singular/plural wording).
+ * A persistent bottom action bar displayed when files have been shared into the app.
+ * Allows the user to select their desired target directory on the app screens and confirm.
  */
 @Composable
-fun ShareDestinationDialog(
+fun ShareConfirmationBottomBar(
     count: Int,
-    onSaveToVault: () -> Unit,
-    onChooseFolder: () -> Unit,
+    targetName: String,
+    onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.share_dest_title)) },
-        text = { Text(stringResource(R.string.share_dest_message, count)) },
-        confirmButton = {
-            TextButton(onClick = onChooseFolder) {
-                Text(stringResource(R.string.share_dest_choose_folder))
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("share_confirmation_bottom_bar"),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 6.dp,
+        shadowElevation = 8.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.FileUpload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f, fill = false)) {
+                    Text(
+                        text = stringResource(R.string.share_bar_title, count),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = stringResource(R.string.share_target_folder, targetName),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onSaveToVault) {
-                Text(stringResource(R.string.share_dest_vault))
+            Spacer(Modifier.width(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(text = stringResource(R.string.action_cancel))
+                }
+                Button(
+                    onClick = onConfirm,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(text = stringResource(R.string.share_save_here))
+                }
             }
         }
-    )
+    }
 }

@@ -34,6 +34,22 @@ library.
   helpers on the repo), `secured_folders` (paths shielded behind auth), `vault_files` (metadata
   for vaulted files). Uses `fallbackToDestructiveMigration()`, so bumping the schema wipes data.
 
+- **`VaultDocumentsProvider`** (`in.sreerajp.vault_files.data`) — a `DocumentsProvider` that
+  publishes `filesDir/Storage` as a browsable root inside the system file picker (authority
+  `${applicationId}.documents`, separate from the `.fileprovider` used for sharing). Read and
+  write: list, open, image thumbnails, create, delete, rename. **`isExposable` hides `Vault/` and
+  every secured folder and blocks path escapes, and is applied on every entry point** — SAF cannot
+  run the app's unlock prompt, so protected content must never be reachable, even by a guessed
+  document id. Callbacks run on binder threads, so everything here is synchronous (secured-folder
+  paths are read with `runBlocking` and cached for 2s) and never touches the ViewModel.
+  `StorageViewModel.loadFilesInDirectory` calls `notifyDirectoryChanged` so an open picker
+  reloads after the app changes a folder.
+
+  Related: the activity's `VIEW` intent filters are deliberately **narrow** (`image/*`, `text/*`,
+  directories) — a `*/*` filter would offer the app as a viewer for every file type it cannot
+  actually display. Folder browsing comes from the directory filter; "other apps can pick files
+  from me" comes from `GET_CONTENT` / `OPEN_DOCUMENT` and this provider.
+
 - **`utils/`** — `BiometricHelper` (wraps `BiometricPrompt`, BIOMETRIC_STRONG or DEVICE_CREDENTIAL,
   PIN fallback handled in UI) and `ZipUtility` (recursive zip/unzip with Zip-Slip path-traversal
   guard).

@@ -190,6 +190,22 @@
     <string name="picker_empty">ഇവിടെ ഉപഫോൾഡറുകൾ ഇല്ല</string>
     <string name="picker_device_permission">ഉപകരണ സ്റ്റോറേജ് ബ്രൗസ് ചെയ്യാൻ എല്ലാ-ഫയൽ ആക്സസ് അനുവദിക്കുക.</string>
 
+    <!-- Files shared into the app from another app's share sheet -->
+    <string name="share_dest_title">പങ്കിട്ട ഫയലുകൾ സൂക്ഷിക്കുക</string>
+    <string name="share_dest_message">%1$d ഫയൽ(കൾ) എവിടെ സൂക്ഷിക്കണം?</string>
+    <string name="share_dest_vault">എൻക്രിപ്റ്റ് ചെയ്ത വോൾട്ട്</string>
+    <string name="share_dest_vault_subtitle">എൻക്രിപ്റ്റ് ചെയ്ത ആപ്പ് വോൾട്ടിൽ സുരക്ഷിതമായി സൂക്ഷിക്കുക</string>
+    <string name="share_dest_choose_folder">ഫോൾഡർ തിരഞ്ഞെടുക്കുക…</string>
+    <string name="share_dest_choose_folder_subtitle">സ്റ്റോറേജ് ഫോൾഡറുകൾ ബ്രൗസ് ചെയ്ത് തിരഞ്ഞെടുക്കുക</string>
+    <string name="share_pick_folder_title">പങ്കിട്ട ഫയലുകൾ സംരക്ഷിക്കാൻ ഫോൾഡർ തിരഞ്ഞെടുക്കുക</string>
+    <string name="share_save_here">ഇവിടെ സംരക്ഷിക്കുക</string>
+    <string name="share_bar_title">%1$d പങ്കിട്ട ഫയൽ(കൾ) സംരക്ഷിക്കുക</string>
+    <string name="share_target_folder">ലക്ഷ്യം: %1$s</string>
+    <string name="picker_parent_folder">മുകളിലെ ഫോൾഡർ</string>
+    <string name="msg_shared_saved_folder">%1$d ഫയൽ(കൾ) %2$s-ലേക്ക് സൂക്ഷിച്ചു</string>
+    <string name="msg_shared_saved_vault">%1$d ഫയൽ(കൾ) വോൾട്ടിലേക്ക് സൂക്ഷിച്ചു</string>
+    <string name="msg_shared_save_failed">പങ്കിട്ട ഫയലുകൾ സൂക്ഷിക്കാനായില്ല.</string>
+
     <!-- Confirmation dialog -->
     <string name="confirm_generic_title">സ്ഥിരീകരിക്കുക</string>
     <string name="confirm_share">%1$s പങ്കിടണോ?</string>

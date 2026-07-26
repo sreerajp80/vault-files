@@ -51,13 +51,29 @@
                 <data android:mimeType="inode/directory" />
             </intent-filter>
 
-            <!-- Handle VIEW intent for all files -->
+            <!-- Handle VIEW only for content the app can really preview. A catch-all */*
+                 here would make the app a candidate viewer for every file type on the
+                 device (APKs, PDFs, video), which it cannot actually display. Folder
+                 browsing comes from the directory filter above; "other apps can pick
+                 files from me" comes from GET_CONTENT/OPEN_DOCUMENT below. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="file" />
                 <data android:scheme="content" />
-                <data android:mimeType="*/*" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="text/*" />
+            </intent-filter>
+
+            <!-- Secure notes have no registered mime type, so match them by file name.
+                 pathPattern only applies to file:// URIs; content:// notes are opened
+                 from inside the app anyway. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:pathPattern=".*\\.securenote" />
             </intent-filter>
 
             <!-- Handle GET_CONTENT for file picking -->
@@ -85,6 +101,20 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Publishes the app's user storage as a source inside the system file picker.
+             MANAGE_DOCUMENTS restricts direct access to the system picker; normal apps
+             reach the files through the URIs the picker grants them. -->
+        <provider
+            android:name=".data.VaultDocumentsProvider"
+            android:authorities="${applicationId}.documents"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
         </provider>
     </application>
 

@@ -2881,80 +2881,174 @@ fun FolderPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
             Column {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SourcePill(
                         selected = rootMode == "app",
+                        icon = Icons.Default.GridView,
+                        label = stringResource(R.string.picker_root_app),
                         onClick = { rootMode = "app"; currentDir = appRoot },
-                        label = { Text(stringResource(R.string.picker_root_app)) }
+                        modifier = Modifier.weight(1f)
                     )
-                    FilterChip(
+                    SourcePill(
                         selected = rootMode == "device",
+                        icon = Icons.Default.PhoneAndroid,
+                        label = stringResource(R.string.picker_root_device),
                         onClick = {
                             if (hasDevicePermission) { rootMode = "device"; currentDir = viewModel.deviceStorageRoot }
                             else onRequestDevicePermission()
                         },
-                        label = { Text(stringResource(R.string.picker_root_device)) }
+                        modifier = Modifier.weight(1f)
                     )
                 }
+
+                Spacer(Modifier.height(12.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FolderOpen,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = currentDir.absolutePath,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    currentDir.absolutePath,
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                LazyColumn(modifier = Modifier.heightIn(max = 260.dp)) {
+
+                LazyColumn(modifier = Modifier.heightIn(min = 160.dp, max = 260.dp)) {
                     if (currentDir.absolutePath != currentRoot.absolutePath) {
                         item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { currentDir = currentDir.parentFile ?: currentRoot }
-                                    .padding(vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Surface(
+                                onClick = { currentDir = currentDir.parentFile ?: currentRoot },
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Default.ArrowUpward, contentDescription = null)
-                                Spacer(Modifier.width(10.dp))
-                                Text("..")
+                                Row(
+                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowUpward,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(
+                                        text = stringResource(R.string.picker_parent_folder),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                     }
                     items(subdirs) { dir ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { currentDir = dir }
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            onClick = { currentDir = dir },
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.Transparent,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.width(10.dp))
-                            Text(dir.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Row(
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Folder,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    text = dir.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
                     if (subdirs.isEmpty() && currentDir.absolutePath == currentRoot.absolutePath) {
                         item {
-                            Text(
-                                stringResource(R.string.picker_empty),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 10.dp)
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FolderOpen,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                    modifier = Modifier.size(36.dp)
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(R.string.picker_empty),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(currentDir) }) {
-                Text(confirmLabel)
+            Button(
+                onClick = { onConfirm(currentDir) },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = confirmLabel,
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.action_cancel),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
     )
 }
 

@@ -233,6 +233,9 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
     private var loadGeneration = 0
 
     fun loadFilesInDirectory(dir: File) {
+        // Every write path funnels through here, so this is the one place that has to tell the
+        // system file picker its cached listing of this folder may be stale.
+        `in`.sreerajp.vault_files.data.VaultDocumentsProvider.notifyDirectoryChanged(getApplication(), dir)
         val generation = ++loadGeneration
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
@@ -641,8 +644,11 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /** Saves each pending shared file into [destDir], then clears the pending state. */
-    fun importSharedToFolder(imports: List<SharedImport>, destDir: File) {
-        if (imports.isEmpty()) return
+    fun importSharedToFolder(imports: List<SharedImport>, destDir: File, onComplete: (() -> Unit)? = null) {
+        if (imports.isEmpty()) {
+            onComplete?.invoke()
+            return
+        }
         viewModelScope.launch {
             val ok = imports.count { repository.importUriToFolder(it.uri, it.name, destDir) }
             if (ok > 0) {
@@ -653,12 +659,16 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
             clearPendingSharedImports()
             loadFilesInDirectory(_currentDirectory.value)
             refreshStorageStats()
+            onComplete?.invoke()
         }
     }
 
     /** Saves each pending shared file straight into the encrypted vault, then clears the pending state. */
-    fun importSharedToVault(imports: List<SharedImport>) {
-        if (imports.isEmpty()) return
+    fun importSharedToVault(imports: List<SharedImport>, onComplete: (() -> Unit)? = null) {
+        if (imports.isEmpty()) {
+            onComplete?.invoke()
+            return
+        }
         viewModelScope.launch {
             val ok = imports.count { repository.importUriToVault(it.uri, it.name) }
             if (ok > 0) {
@@ -668,6 +678,7 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
             }
             clearPendingSharedImports()
             refreshStorageStats()
+            onComplete?.invoke()
         }
     }
 
