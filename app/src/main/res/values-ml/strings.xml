@@ -84,6 +84,8 @@
     <string name="sort_name">പേര്</string>
     <string name="sort_size">വലുപ്പം</string>
     <string name="sort_date">തീയതി</string>
+    <string name="sort_ascending">ആരോഹണം</string>
+    <string name="sort_descending">അവരോഹണം</string>
     <string name="sort_by">%1$s അനുസരിച്ച് അടുക്കുക</string>
     <string name="cd_sort">അടുക്കുക</string>
     <string name="cd_view_list">പട്ടിക കാഴ്ച</string>

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import `in`.sreerajp.vault_files.config.AppConstants
 
 @Database(
     entities = [AppSetting::class, SecuredFolder::class, VaultFile::class],
@@ -24,7 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "vault_files_database"
+                    AppConstants.DATABASE_NAME
                 )
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()

@@ -1,6 +1,6 @@
-# CLAUDE.md — Vault Files
+# AGENTS.md — Vault Files
 
-This file is read by Claude Code at the start of every session in this repository.
+This file is read by AI agents and LLM coding assistants (Gemini, Antigravity, Cursor, Windsurf, Codex, etc.) at the start of every session in this repository.
 Read it before making any change. See the docs table below for full detail.
 
 ---
@@ -155,8 +155,8 @@ do not need to import `R` or `BuildConfig` — they are generated into that same
 ## Where things live
 
 ```
-CLAUDE.md            # Claude Code project rules (this file)
-AGENTS.md            # AI agent instructions (dual-aligned)
+AGENTS.md            # AI agent instructions (this file)
+CLAUDE.md            # Claude Code project rules (dual-aligned)
 docs/                # living architecture, security, build, features, release docs
 plans/               # change plans (one per change, yyyymmdd_hhMMss_<slug>.md)
 change_log/          # change logs (one per change, yyyymmdd_hhMMss_<slug>.md)
@@ -194,7 +194,7 @@ Every change follows plan-before-changing and log-after-changing:
 
 ---
 
-## What Claude must always / never do
+## What AI agents must always / never do
 
 **Always:**
 - Read this file and referenced `docs/` before making changes.

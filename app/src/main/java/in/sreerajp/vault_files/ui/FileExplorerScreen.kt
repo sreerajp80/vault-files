@@ -190,6 +190,7 @@ fun FileExplorerScreen(
     // Screen-local search + sort state (client-side over the loaded directory list)
     var searchQuery by remember { mutableStateOf("") }
     var sortMode by remember { mutableStateOf(FileSortMode.NAME) }
+    var sortAscending by remember { mutableStateOf(true) }
     var optionsMenuExpanded by remember { mutableStateOf(false) }
 
     val isAtRoot = currentDir.absolutePath == viewModel.userStorageRoot.absolutePath
@@ -257,16 +258,34 @@ fun FileExplorerScreen(
         selectedPaths = emptySet()
     }
 
-    val displayedFiles = remember(baseList, searchQuery, sortMode) {
+    val displayedFiles = remember(baseList, searchQuery, sortMode, sortAscending) {
         val filtered = if (searchQuery.isBlank()) {
             baseList
         } else {
             baseList.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }
         }
         val comparator = when (sortMode) {
-            FileSortMode.NAME -> compareBy<FileItem> { !it.isDirectory }.thenBy { it.name.lowercase() }
-            FileSortMode.SIZE -> compareBy<FileItem> { !it.isDirectory }.thenByDescending { it.size }
-            FileSortMode.DATE -> compareBy<FileItem> { !it.isDirectory }.thenByDescending { it.file.lastModified() }
+            FileSortMode.NAME -> {
+                if (sortAscending) {
+                    compareBy<FileItem> { !it.isDirectory }.thenBy { it.name.lowercase() }
+                } else {
+                    compareBy<FileItem> { !it.isDirectory }.thenByDescending { it.name.lowercase() }
+                }
+            }
+            FileSortMode.SIZE -> {
+                if (sortAscending) {
+                    compareBy<FileItem> { !it.isDirectory }.thenBy { it.size }
+                } else {
+                    compareBy<FileItem> { !it.isDirectory }.thenByDescending { it.size }
+                }
+            }
+            FileSortMode.DATE -> {
+                if (sortAscending) {
+                    compareBy<FileItem> { !it.isDirectory }.thenBy { it.file.lastModified() }
+                } else {
+                    compareBy<FileItem> { !it.isDirectory }.thenByDescending { it.file.lastModified() }
+                }
+            }
         }
         filtered.sortedWith(comparator)
     }
@@ -1229,19 +1248,26 @@ fun FileExplorerScreen(
 
         // --- Sort By Dialog ---
         if (showSortByDialog) {
+            var tempSortMode by remember(showSortByDialog) { mutableStateOf(sortMode) }
+            var tempSortAscending by remember(showSortByDialog) { mutableStateOf(sortAscending) }
+
             AlertDialog(
                 onDismissRequest = { showSortByDialog = false },
                 title = { Text(stringResource(R.string.menu_sort_by)) },
                 text = {
-                    Column {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         FileSortMode.values().forEach { mode ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable {
-                                        sortMode = mode
-                                        showSortByDialog = false
+                                        if (tempSortMode == mode) {
+                                            tempSortAscending = !tempSortAscending
+                                        } else {
+                                            tempSortMode = mode
+                                            tempSortAscending = (mode == FileSortMode.NAME)
+                                        }
                                     }
                                     .padding(vertical = 12.dp, horizontal = 8.dp)
                                     .testTag("files_sort_${mode.name.lowercase()}"),
@@ -1249,7 +1275,13 @@ fun FileExplorerScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Text(stringResource(mode.labelRes), modifier = Modifier.weight(1f))
-                                if (mode == sortMode) {
+                                if (mode == tempSortMode) {
+                                    Icon(
+                                        imageVector = if (tempSortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = if (tempSortAscending) stringResource(R.string.sort_ascending) else stringResource(R.string.sort_descending),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                     Icon(
                                         Icons.Default.Check,
                                         contentDescription = null,
@@ -1258,9 +1290,55 @@ fun FileExplorerScreen(
                                 }
                             }
                         }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            FilterChip(
+                                selected = tempSortAscending,
+                                onClick = { tempSortAscending = true },
+                                label = { Text(stringResource(R.string.sort_ascending)) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.ArrowUpward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                modifier = Modifier.testTag("files_sort_ascending")
+                            )
+                            FilterChip(
+                                selected = !tempSortAscending,
+                                onClick = { tempSortAscending = false },
+                                label = { Text(stringResource(R.string.sort_descending)) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                modifier = Modifier.testTag("files_sort_descending")
+                            )
+                        }
                     }
                 },
-                confirmButton = {},
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            sortMode = tempSortMode
+                            sortAscending = tempSortAscending
+                            showSortByDialog = false
+                        },
+                        modifier = Modifier.testTag("files_sort_ok")
+                    ) {
+                        Text(stringResource(R.string.action_ok))
+                    }
+                },
                 dismissButton = {
                     TextButton(onClick = { showSortByDialog = false }) {
                         Text(stringResource(R.string.action_cancel))
@@ -2648,10 +2726,7 @@ data class ConfirmSpec(val message: String, val onConfirm: () -> Unit)
 /** A pending Copy-to / Move-to request awaiting a destination from the folder picker. */
 data class MoveCopyRequest(val items: List<FileItem>, val isMove: Boolean)
 
-private fun mimeTypeOf(item: FileItem): String {
-    val ext = item.name.substringAfterLast('.', "").lowercase()
-    return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
-}
+private fun mimeTypeOf(item: FileItem): String = mimeTypeForName(item.name)
 
 private fun uriFor(context: Context, item: FileItem): Uri =
     FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", item.file)
@@ -2665,20 +2740,29 @@ fun shareItems(context: Context, items: List<FileItem>, viewModel: StorageViewMo
     }
     try {
         val uris = ArrayList(files.map { uriFor(context, it) })
+        val shareType = shareTypeFor(files.map { it.name })
         val intent = if (uris.size == 1) {
             Intent(Intent.ACTION_SEND).apply {
-                type = mimeTypeOf(files.first())
+                type = shareType
                 putExtra(Intent.EXTRA_STREAM, uris.first())
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
         } else {
             Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                type = "*/*"
+                type = shareType
                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
         }
-        context.startActivity(Intent.createChooser(intent, null).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+        val chooser = Intent.createChooser(intent, null).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            // Bluetooth's intent filter lists only a handful of MIME types, so it drops out of the
+            // sheet for APKs, archives and the like. Add it back explicitly when it is missing.
+            bluetoothInitialIntents(context, intent, uris)?.let {
+                putExtra(Intent.EXTRA_INITIAL_INTENTS, it)
+            }
+        }
+        context.startActivity(chooser)
     } catch (e: Exception) {
         viewModel.dispatchMessage(context.getString(R.string.msg_share_failed, files.first().name))
     }

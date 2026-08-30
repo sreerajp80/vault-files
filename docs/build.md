@@ -1,49 +1,105 @@
-# Build, run, and test
+# Build and Test — Vault Files
 
-Uses the Gradle wrapper (`./gradlew` / `gradlew.bat`). Single `:app` module.
-Java/Kotlin **17**, `compileSdk`/`targetSdk` **36**, `minSdk` **24**. Compose + KSP (Room, Moshi).
+This document provides build instructions, Gradle task references, testing commands, and signing configurations for Vault Files.
+Read this before building release artifacts, executing unit or screenshot tests, or modifying build scripts.
 
+Read first:
+- [../AGENTS.md](../AGENTS.md) (or [../CLAUDE.md](../CLAUDE.md))
+- [guidelines/kotlin_build_configuration_guide.md](guidelines/kotlin_build_configuration_guide.md)
+- [release_process.md](release_process.md)
+
+---
+
+## 1. Environment & Prerequisites
+
+- **JDK:** 17 (Eclipse Temurin or OpenJDK recommended)
+- **Android SDK:** `compileSdk` 36, `targetSdk` 36, `minSdk` 24
+- **Build System:** Gradle Wrapper (`./gradlew` on Linux/macOS, `gradlew.bat` on Windows)
+- **Plugins:** Android Application (`com.android.application`), Kotlin Android, Kotlin Compose, Google KSP, Roborazzi, Secrets Gradle Plugin.
+
+---
+
+## 2. Common Build Commands
+
+### 2.1 Build APKs
 ```bash
-./gradlew assembleDebug          # build debug APK
-./gradlew installDebug           # build + install on connected device/emulator
-./gradlew testDebugUnitTest      # run JVM/Robolectric unit tests
-./gradlew connectedAndroidTest   # run instrumented (espresso) tests on a device
-./gradlew lint                   # Android lint
+# Debug build
+./gradlew assembleDebug
+
+# Release build (requires keystore.properties)
+./gradlew assembleRelease
 ```
 
-Run a single test class / method:
-
+### 2.2 Install on Device / Emulator
 ```bash
+./gradlew installDebug
+```
+
+### 2.3 Run Tests
+```bash
+# Run all JVM / Robolectric unit tests
+./gradlew testDebugUnitTest
+
+# Run a specific test class
 ./gradlew testDebugUnitTest --tests "in.sreerajp.vault_files.ExampleRobolectricTest"
-./gradlew testDebugUnitTest --tests "in.sreerajp.vault_files.GreetingScreenshotTest.greeting_screenshot"
+./gradlew testDebugUnitTest --tests "in.sreerajp.vault_files.ShareSupportTest"
+
+# Run instrumented tests (connected physical device or emulator)
+./gradlew connectedAndroidTest
 ```
 
-Screenshot tests use **Roborazzi** (golden images under `app/src/test/screenshots/`):
+### 2.4 Screenshot Testing (Roborazzi)
+Screenshot tests generate golden images located in `app/src/test/screenshots/`:
 
 ```bash
-./gradlew recordRoborazziDebug   # regenerate golden screenshots
-./gradlew verifyRoborazziDebug   # verify against goldens
+# Regenerate golden reference screenshots
+./gradlew recordRoborazziDebug
+
+# Verify current rendering against reference goldens
+./gradlew verifyRoborazziDebug
 ```
 
-## Build gotchas
+### 2.5 Code Quality & Linting
+```bash
+./gradlew lint
+```
 
-- **Signing:** both the `debug` (`debugConfig`) and `release` signing configs use
-  `vfkeystore.jks` at the project root. Credentials are read from a gitignored
-  `keystore.properties` (also at the root) with keys `storeFile`, `storePassword`,
-  `keyAlias`, `keyPassword`. Copy `keystore.properties.example` to `keystore.properties`
-  and fill in the values before building. (`storeFile` defaults to `vfkeystore.jks` if
-  omitted.)
-- **Secrets plugin:** `.env` (gitignored) is read via the secrets-gradle-plugin, falling back to
-  `.env.example`. Builds work without a real key; nothing in the app consumes it currently.
-- Gradle **configuration cache and caching are on** (`gradle.properties`); if you change build
-  logic and see stale behavior, add `--no-configuration-cache`.
+---
 
-## Package naming
+## 3. Configuration & Signing Gotchas
 
-All three identifiers are now the same — `in.sreerajp.vault_files`:
-- Source package (all `.kt` files live here)
-- Build `namespace` (R class / BuildConfig)
-- `applicationId` (installed package)
+### 3.1 Keystore Configuration
+- The build expects a signing keystore at the project root (`vfkeystore.jks`).
+- Credentials are read from `keystore.properties` at the project root:
+  ```properties
+  storeFile=vfkeystore.jks
+  storePassword=<keystore-password>
+  keyAlias=<alias>
+  keyPassword=<key-password>
+  ```
+- Both `debugConfig` and `release` signing configurations in `app/build.gradle.kts` consume `keystore.properties`.
+- Ensure `keystore.properties` and `*.jks` remain git-ignored and are never committed.
 
-`in` is a Kotlin keyword, so `package` lines and imports of our own code must backtick it:
-`` package `in`.sreerajp.vault_files.ui ``. The folder on disk is plain `in`.
+### 3.2 Secrets Gradle Plugin
+- Secrets are managed via `com.google.android.libraries.mapsplatform.secrets-gradle-plugin`.
+- The plugin looks for `.env` at the project root, falling back to `.env.example`.
+- No sensitive external API keys are required for local builds.
+
+### 3.3 Configuration Cache
+- Gradle configuration cache is enabled in `gradle.properties` (`org.gradle.configuration-cache=true`).
+- If you modify build scripts or dependencies and observe stale task execution, bypass cache using:
+  ```bash
+  ./gradlew testDebugUnitTest --no-configuration-cache
+  ```
+
+---
+
+## 4. Package & Identifier Alignment
+
+The single package identifier across the entire repository is:
+```
+in.sreerajp.vault_files
+```
+- **Kotlin Source Package:** `package `in`.sreerajp.vault_files` (backticked `in` in source)
+- **Android Namespace:** `in.sreerajp.vault_files`
+- **Application ID:** `in.sreerajp.vault_files`

@@ -2,6 +2,7 @@ package `in`.sreerajp.vault_files.data
 
 import android.content.Context
 import android.net.Uri
+import `in`.sreerajp.vault_files.config.AppConstants
 import `in`.sreerajp.vault_files.utils.ZipUtility
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -21,9 +22,7 @@ private const val LISTING_CHUNK = 50
 // directories with many subfolders. A final emission is always sent regardless.
 private const val SIZE_EMIT_INTERVAL_MS = 100L
 
-// Upper bound on how many bytes the text previewer reads from a file. Bounds memory and keeps
-// the UI responsive for huge logs; anything larger is shown truncated.
-private const val TEXT_PREVIEW_MAX_BYTES = 512 * 1024
+
 
 // Generous allowlist of file extensions treated as previewable text. Covers plain text, markup,
 // config/data, logs, and common source code. Files outside this set keep the generic toast.
@@ -45,9 +44,9 @@ class StorageRepository(
     private val vaultFileDao: VaultFileDao
 ) {
     // Root directory for user storage (isolated to app filesDir to guarantee access)
-    val userStorageRoot: File = File(context.filesDir, "Storage")
+    val userStorageRoot: File = File(context.filesDir, AppConstants.STORAGE_DIR_NAME)
     // Safe biometric / PIN file encryption storage
-    private val vaultStorageRoot: File = File(context.filesDir, "Vault")
+    private val vaultStorageRoot: File = File(context.filesDir, AppConstants.VAULT_DIR_NAME)
     // Keystore-backed AES-GCM encryption for secure notes
     private val cryptoManager = CryptoManager()
 
@@ -674,7 +673,7 @@ class StorageRepository(
         if (!vaultPhysicalFile.exists()) return@withContext false
 
         // Place recovered files inside a "Restored" folder of standard user storage
-        val restoredDirectory = File(userStorageRoot, "Restored")
+        val restoredDirectory = File(userStorageRoot, AppConstants.RESTORED_DIR_NAME)
         if (!restoredDirectory.exists()) {
             restoredDirectory.mkdirs()
         }
@@ -794,14 +793,14 @@ class StorageRepository(
         !file.isDirectory && file.extension.lowercase() in TEXT_PREVIEW_EXTENSIONS
 
     /**
-     * Reads up to [TEXT_PREVIEW_MAX_BYTES] from [file] and decodes it as UTF-8 for preview.
+     * Reads up to [AppConstants.TEXT_PREVIEW_MAX_BYTES] from [file] and decodes it as UTF-8 for preview.
      * Returns null when the read fails or the content looks binary (contains a NUL byte in the
      * sampled bytes), so the viewer can show a graceful "can't display as text" state.
      */
     suspend fun readTextFilePreview(file: File): TextPreviewContent? = withContext(Dispatchers.IO) {
         try {
             val totalLength = file.length()
-            val buffer = ByteArray(TEXT_PREVIEW_MAX_BYTES)
+            val buffer = ByteArray(AppConstants.TEXT_PREVIEW_MAX_BYTES)
             val read = file.inputStream().use { input ->
                 var off = 0
                 while (off < buffer.size) {
