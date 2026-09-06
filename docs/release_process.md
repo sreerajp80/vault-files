@@ -31,23 +31,29 @@ Read first:
 ## 2. Pre-Release Preparation & Versioning
 
 ### 2.1 Versioning Policy
-Update `versionCode` (monotonically increasing integer) and `versionName` (semantic versioning `MAJOR.MINOR`) in `app/build.gradle.kts`:
+Vault Files uses `app/src/main/assets/config/app_config.json` as the **single source of truth** for application versioning and About-screen metadata (Pattern A).
+Gradle's `app/build.gradle.kts` automatically reads `version` (for `versionName`) and `build` (for `versionCode`) directly from this asset configuration at build time.
 
-```kotlin
-defaultConfig {
-    versionCode = 18
-    versionName = "18.0"
-    // ...
+To update the version before a release, edit `app/src/main/assets/config/app_config.json`:
+
+```json
+{
+  "appName": "Vault Files",
+  "description": "Secure file & storage manager.",
+  "version": "18.0",
+  "build": "18",
+  "details": {
+    "Author": "Sreeraj P",
+    "IDE used": "Android Studio, Visual Studio Code",
+    "AI used": "Claude Opus 4.8",
+    "License": "All libraries used are open source."
+  }
 }
 ```
 
 ### 2.2 About Metadata Update
-Update `app/about.properties` if author, IDE, or AI tooling versions have changed:
-```properties
-author=Sreeraj P
-ide=Android Studio
-aiVersion=Claude Opus 4.8
-```
+Update `details` in `app/src/main/assets/config/app_config.json` if author, IDE, AI tooling, or other informational fields have changed.
+`ConfigService.loadAndVerify()` will automatically load these at runtime and ensure the asset's version matches the build's package info.
 
 ---
 

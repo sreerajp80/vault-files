@@ -185,6 +185,9 @@
     <!-- Copy/Move folder picker -->
     <string name="picker_copy_title">Copy to</string>
     <string name="picker_move_title">Move to</string>
+    <string name="move_bar_title">Move %1$d item(s)</string>
+    <string name="copy_bar_title">Copy %1$d item(s)</string>
+    <string name="msg_copy_vault_unsupported">Copying to vault is not supported. Use move to vault instead.</string>
     <string name="picker_root_app">App storage</string>
     <string name="picker_root_device">Device storage</string>
     <string name="picker_copy_here">Copy here</string>

@@ -53,10 +53,16 @@ It implements the Model-View-ViewModel (MVVM) architecture with unidirectional d
   - `FileExplorerScreen`: Hierarchical file browser, search, sorting, multi-select operations, breadcrumbs, and in-app file/note viewers.
   - `SecureVaultScreen`: Gated vault file list, restore/delete actions, and vault import dialogs.
   - `SettingsScreen`: Sub-page hub for Display, Security (PIN setup, shielded folders list), Help FAQ, Permissions status, and About metadata.
-  - `AboutScreen`: Renders app build metadata read from `BuildConfig` fields (Pattern B).
+  - `AboutScreen`: Renders app metadata dynamically from `ConfigService` (Pattern A).
 - **`StorageViewModel`** (`AndroidViewModel`): The single source of truth for the entire application. Exposes immutable `StateFlow`s for file listings, storage usage statistics, active folder paths, preferences, and session-based unlock states. Dispatches transient notifications via `MutableSharedFlow<String> userMessage`.
 
-### 2.2 Domain & Data Layer (`data/`)
+### 2.2 Configuration Layer (`config/` & `assets/config/`)
+- **`app_config.json`** (`assets/config/app_config.json`): Single source of truth for app name, description, version, build number, and metadata details.
+- **`AppConfig`**: Immutable data class holding typed configuration with safe built-in `fallback` and resilient `fromJson` parsing.
+- **`ConfigService`**: Loads `app_config.json` and verifies version match with package info via `PackageInfoCompat`.
+- **`AppConstants`**: Holds non-UI project-wide technical constants (database name, directory names, preview thresholds).
+
+### 2.3 Domain & Data Layer (`data/`)
 - **`StorageRepository`**: Encapsulates all disk I/O, Room database interactions, and file system modifications on `Dispatchers.IO`. Manages two primary on-disk directories under `context.filesDir`:
   - `Storage/`: User-accessible private sandbox storage.
   - `Vault/`: Opaque store for vaulted items renamed to `vault_<uuid>.secured`.
@@ -66,7 +72,7 @@ It implements the Model-View-ViewModel (MVVM) architecture with unidirectional d
   3. `vault_files`: Metadata linking opaque vault filenames to original file names and sizes.
 - **`CryptoManager`**: AES-256-GCM cryptography service using Android Keystore keys for Secure Notes.
 
-### 2.3 System Integration & Storage Access Framework (`data/VaultDocumentsProvider.kt`)
+### 2.4 System Integration & Storage Access Framework (`data/VaultDocumentsProvider.kt`)
 - **`VaultDocumentsProvider`**: Implements Android's `DocumentsProvider` under authority `in.sreerajp.vault_files.documents`.
 - Exposes `filesDir/Storage` to the system file picker (`GET_CONTENT` / `OPEN_DOCUMENT`).
 - **Exposure Boundary**: The provider enforces `isExposable(file)` across all entry points, strictly blocking access to `Vault/`, all shielded folders, and path-traversal attempts.
@@ -76,18 +82,24 @@ It implements the Model-View-ViewModel (MVVM) architecture with unidirectional d
 ## 3. Package & Source Structure
 
 ```
-app/src/main/java/in/sreerajp/vault_files/
-├── MainActivity.kt               # Entry Activity and tab coordinator
-├── config/
-│   └── AppConstants.kt           # Project-wide technical constants (DB name, dir names, thresholds)
-├── data/
-│   ├── AppDatabase.kt            # Room database definition
-│   ├── CryptoManager.kt          # AES-256-GCM Keystore cryptography
-│   ├── DatabaseEntities.kt       # Entities & DAOs (settings, shielded folders, vault files)
-│   ├── StorageRepository.kt      # Core file I/O & data abstraction
-│   └── VaultDocumentsProvider.kt # Storage Access Framework provider
-├── ui/
-│   ├── AboutScreen.kt            # About screen (Pattern B BuildConfig metadata)
+app/src/main/
+├── assets/
+│   └── config/
+│       └── app_config.json       # App configuration & version single source of truth
+└── java/in/sreerajp/vault_files/
+    ├── MainActivity.kt           # Entry Activity and tab coordinator
+    ├── config/
+    │   ├── AppConfig.kt          # Typed config model with fallback and parser
+    │   ├── AppConstants.kt       # Project-wide technical constants (DB name, dir names, thresholds)
+    │   └── ConfigService.kt      # Asset loader and version drift validator
+    ├── data/
+    │   ├── AppDatabase.kt        # Room database definition
+    │   ├── CryptoManager.kt      # AES-256-GCM Keystore cryptography
+    │   ├── DatabaseEntities.kt   # Entities & DAOs (settings, shielded folders, vault files)
+    │   ├── StorageRepository.kt  # Core file I/O & data abstraction
+    │   └── VaultDocumentsProvider.kt # Storage Access Framework provider
+    ├── ui/
+    │   ├── AboutScreen.kt        # About screen (Pattern A asset-backed dynamic metadata)
 │   ├── FileExplorerScreen.kt     # File manager Composable screen
 │   ├── PermissionsScreen.kt      # Real-time permissions status viewer
 │   ├── SecureVaultScreen.kt      # Vault browser and actions

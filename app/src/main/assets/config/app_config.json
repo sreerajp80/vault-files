@@ -1,0 +1,13 @@
+{
+  "appName": "Vault Files",
+  "description": "Secure file & storage manager.",
+  "version": "17.4",
+  "build": "19",
+  "details": {
+    "Author": "Sreeraj P",
+    "Email": "sreerajp@zohomail.in",
+    "AI used": "Claude Opus 4.8 / Gemini 3.8 Flash",
+    "License": "All libraries used are open source.",
+    "IDE": "Visual Studio Code / Antigravity / Android Studio"
+  }
+}

@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import groovy.json.JsonSlurper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Properties
@@ -19,14 +20,16 @@ val keystoreProps = Properties().apply {
   if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
 }
 
-// Load editable About-screen metadata from about.properties (app-module root).
-// The "Last Build date" is stamped at build time below.
-val aboutPropsFile = file("about.properties")
-val aboutProps = Properties().apply {
-  if (aboutPropsFile.exists()) aboutPropsFile.inputStream().use { load(it) }
+// Read editable app configuration and version from app_config.json (single source of truth).
+val appConfigFile = file("src/main/assets/config/app_config.json")
+val appConfig = if (appConfigFile.exists()) {
+  @Suppress("UNCHECKED_CAST")
+  JsonSlurper().parse(appConfigFile) as? Map<String, Any> ?: emptyMap()
+} else {
+  emptyMap()
 }
-fun aboutValue(key: String, default: String): String =
-  "\"${aboutProps.getProperty(key, default).replace("\"", "\\\"")}\""
+val appVersionName = (appConfig["version"] as? String) ?: "1.0.0"
+val appVersionCode = (appConfig["build"]?.toString()?.toIntOrNull()) ?: 1
 val buildDate: String = SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date())
 
 android {
@@ -37,15 +40,12 @@ android {
     applicationId = "in.sreerajp.vault_files"
     minSdk = 24
     targetSdk = 36
-    versionCode = 17
-    versionName = "17.2"
+    versionCode = appVersionCode
+    versionName = appVersionName
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-    // About-screen metadata exposed via BuildConfig.
-    buildConfigField("String", "AUTHOR", aboutValue("author", "Sreeraj P"))
-    buildConfigField("String", "IDE", aboutValue("ide", "Android Studio"))
-    buildConfigField("String", "AI_VERSION", aboutValue("aiVersion", "Claude Opus 4.8"))
+    // Last build date stamped at build time for the About screen.
     buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
   }
 

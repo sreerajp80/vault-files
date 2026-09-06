@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.IntentCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import `in`.sreerajp.vault_files.ui.FileExplorerScreen
-import `in`.sreerajp.vault_files.ui.FolderPickerDialog
 import `in`.sreerajp.vault_files.ui.hasAllFilesPermission
 import `in`.sreerajp.vault_files.ui.SecureVaultScreen
 import `in`.sreerajp.vault_files.ui.SharedImport
@@ -136,6 +136,7 @@ class MainActivity : FragmentActivity() {
                     // Files shared into the app from another app's share sheet. Once unlocked, allow
                     // the user to browse app screens (Files / Vault) and confirm with bottom bar.
                     val pendingShares by viewModel.pendingSharedImports.collectAsState()
+                    val pendingMoveCopy by viewModel.pendingMoveCopy.collectAsState()
 
                     var activeTabIndex by rememberSaveable { mutableStateOf(1) } // Default to Files explorer tab
                     val isPickMode by viewModel.isPickMode.collectAsState()
@@ -184,7 +185,8 @@ class MainActivity : FragmentActivity() {
                     // Back from any non-main tab returns to the main Files tab.
                     // If in pick-mode, pressing Back exits pick mode and cancels.
                     // If in pending-share mode, pressing Back clears pending shares.
-                    BackHandler(enabled = isPickMode || activeTabIndex != 1 || pendingShares != null) {
+                    // If in pending move/copy mode, pressing Back clears pending move/copy.
+                    BackHandler(enabled = isPickMode || activeTabIndex != 1 || pendingShares != null || pendingMoveCopy != null) {
                         if (isPickMode) {
                             viewModel.exitPickMode()
                             setResult(RESULT_CANCELED)
@@ -192,6 +194,8 @@ class MainActivity : FragmentActivity() {
                         } else if (pendingShares != null) {
                             viewModel.clearPendingSharedImports()
                             finish()
+                        } else if (pendingMoveCopy != null) {
+                            viewModel.clearPendingMoveCopy()
                         } else {
                             viewModel.clearCategoryFilter()
                             activeTabIndex = 1
@@ -222,6 +226,38 @@ class MainActivity : FragmentActivity() {
                                         onDismiss = {
                                             viewModel.clearPendingSharedImports()
                                             finish()
+                                        }
+                                    )
+                                }
+                                pendingMoveCopy?.let { request ->
+                                    val currentDir by viewModel.currentDirectory.collectAsState()
+                                    val targetName = if (activeTabIndex == 2) {
+                                        stringResource(R.string.share_dest_vault)
+                                    } else {
+                                        currentDir.name.ifEmpty { "/" }
+                                    }
+                                    MoveCopyConfirmationBottomBar(
+                                        isMove = request.isMove,
+                                        count = request.items.size,
+                                        targetName = targetName,
+                                        onConfirm = {
+                                            if (activeTabIndex == 2) {
+                                                if (request.isMove) {
+                                                    request.items.forEach { viewModel.secureFileInVault(it) }
+                                                } else {
+                                                    viewModel.dispatchMessage(getString(R.string.msg_copy_vault_unsupported))
+                                                }
+                                            } else {
+                                                if (request.isMove) {
+                                                    viewModel.moveItemsTo(request.items, currentDir)
+                                                } else {
+                                                    viewModel.copyItemsTo(request.items, currentDir)
+                                                }
+                                            }
+                                            viewModel.clearPendingMoveCopy()
+                                        },
+                                        onDismiss = {
+                                            viewModel.clearPendingMoveCopy()
                                         }
                                     )
                                 }
@@ -604,6 +640,92 @@ fun ShareConfirmationBottomBar(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(text = stringResource(R.string.share_save_here))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A bottom bar shown when files are being moved or copied within the app.
+ * Allows the user to select their desired target directory on the app screens and confirm.
+ */
+@Composable
+fun MoveCopyConfirmationBottomBar(
+    isMove: Boolean,
+    count: Int,
+    targetName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("move_copy_confirmation_bottom_bar"),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 6.dp,
+        shadowElevation = 8.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = if (isMove) Icons.AutoMirrored.Filled.DriveFileMove else Icons.Default.FileCopy,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f, fill = false)) {
+                    Text(
+                        text = stringResource(if (isMove) R.string.move_bar_title else R.string.copy_bar_title, count),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = stringResource(R.string.share_target_folder, targetName),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(text = stringResource(R.string.action_cancel))
+                }
+                Button(
+                    onClick = onConfirm,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(text = stringResource(if (isMove) R.string.picker_move_here else R.string.picker_copy_here))
                 }
             }
         }

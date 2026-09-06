@@ -3,7 +3,7 @@ package `in`.sreerajp.vault_files.config
 /**
  * Project-wide technical constants.
  *
- * About-screen metadata uses Pattern B (BuildConfig via `about.properties`).
+ * About-screen metadata uses Pattern A (assets/config/app_config.json via AppConfig & ConfigService).
  * This file holds only non-UI technical values shared across layers
  * (database name, sandbox directory names, preview thresholds).
  *

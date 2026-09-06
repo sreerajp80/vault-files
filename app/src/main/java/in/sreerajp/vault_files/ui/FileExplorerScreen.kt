@@ -178,7 +178,6 @@ fun FileExplorerScreen(
     var pendingConfirm by remember { mutableStateOf<ConfirmSpec?>(null) }
     var renameTarget by remember { mutableStateOf<FileItem?>(null) }
     var openAsTarget by remember { mutableStateOf<FileItem?>(null) }
-    var moveCopyRequest by remember { mutableStateOf<MoveCopyRequest?>(null) }
 
     // Multi-select state: absolute paths of items the user has long-pressed to select. While
     // non-empty the screen is in "selection mode" and the search field is replaced by a
@@ -418,8 +417,16 @@ fun FileExplorerScreen(
                             }
                             SelectionAction.RENAME -> { renameTarget = single }
                             SelectionAction.OPEN_AS -> { openAsTarget = single }
-                            SelectionAction.COPY_TO -> { moveCopyRequest = MoveCopyRequest(items, isMove = false) }
-                            SelectionAction.MOVE_TO -> { moveCopyRequest = MoveCopyRequest(items, isMove = true) }
+                            SelectionAction.COPY_TO -> {
+                                if (isCategoryFiltered) viewModel.clearCategoryFilter()
+                                viewModel.setPendingMoveCopy(MoveCopyRequest(items, isMove = false))
+                                clear()
+                            }
+                            SelectionAction.MOVE_TO -> {
+                                if (isCategoryFiltered) viewModel.clearCategoryFilter()
+                                viewModel.setPendingMoveCopy(MoveCopyRequest(items, isMove = true))
+                                clear()
+                            }
                             SelectionAction.COMPRESS -> { showZipDialogForItems = items }
                             SelectionAction.DELETE -> {
                                 val runDelete = { items.forEach { viewModel.deleteFileItem(it) }; clear() }
@@ -1083,38 +1090,6 @@ fun FileExplorerScreen(
             )
         }
 
-        // --- Copy/Move destination picker ---
-        moveCopyRequest?.let { request ->
-            MoveCopyPickerDialog(
-                request = request,
-                viewModel = viewModel,
-                hasDevicePermission = hasPermission,
-                onRequestDevicePermission = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        try {
-                            context.startActivity(
-                                Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                                    data = Uri.parse("package:${context.packageName}")
-                                }
-                            )
-                        } catch (e: Exception) {
-                            try {
-                                context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
-                            } catch (ex: Exception) {
-                                viewModel.dispatchMessage(context.getString(R.string.msg_cannot_launch_settings_files))
-                            }
-                        }
-                    }
-                },
-                onConfirm = { destDir ->
-                    if (request.isMove) viewModel.moveItemsTo(request.items, destDir)
-                    else viewModel.copyItemsTo(request.items, destDir)
-                    moveCopyRequest = null
-                    selectedPaths = emptySet()
-                },
-                onDismiss = { moveCopyRequest = null }
-            )
-        }
 
         // --- Full-screen Image Preview ---
         imagePreview?.let { previewItem ->
@@ -2723,8 +2698,6 @@ fun openFileExternally(context: Context, item: FileItem, viewModel: StorageViewM
 /** A pending generic confirmation: [message] is shown with OK/Cancel; OK runs [onConfirm]. */
 data class ConfirmSpec(val message: String, val onConfirm: () -> Unit)
 
-/** A pending Copy-to / Move-to request awaiting a destination from the folder picker. */
-data class MoveCopyRequest(val items: List<FileItem>, val isMove: Boolean)
 
 private fun mimeTypeOf(item: FileItem): String = mimeTypeForName(item.name)
 
@@ -2916,225 +2889,6 @@ fun OpenAsDialog(onPick: (String) -> Unit, onDismiss: () -> Unit) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MoveCopyPickerDialog(
-    request: MoveCopyRequest,
-    viewModel: StorageViewModel,
-    hasDevicePermission: Boolean,
-    onRequestDevicePermission: () -> Unit,
-    onConfirm: (File) -> Unit,
-    onDismiss: () -> Unit
-) {
-    FolderPickerDialog(
-        title = stringResource(if (request.isMove) R.string.picker_move_title else R.string.picker_copy_title),
-        confirmLabel = stringResource(if (request.isMove) R.string.picker_move_here else R.string.picker_copy_here),
-        viewModel = viewModel,
-        hasDevicePermission = hasDevicePermission,
-        onRequestDevicePermission = onRequestDevicePermission,
-        onConfirm = onConfirm,
-        onDismiss = onDismiss
-    )
-}
-
-/**
- * A reusable folder-browser dialog. Lets the user browse the app sandbox and (with all-files
- * permission) the device storage, then confirm the current folder. Backs both the move/copy
- * destination picker and the "share into a folder" import flow — [title] and [confirmLabel] make
- * it read correctly for each caller.
- */
-@Composable
-fun FolderPickerDialog(
-    title: String,
-    confirmLabel: String,
-    viewModel: StorageViewModel,
-    hasDevicePermission: Boolean,
-    onRequestDevicePermission: () -> Unit,
-    onConfirm: (File) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val appRoot = viewModel.appStorageRoot
-    var rootMode by remember { mutableStateOf("app") }
-    val currentRoot = if (rootMode == "device") viewModel.deviceStorageRoot else appRoot
-    var currentDir by remember { mutableStateOf(appRoot) }
-    var subdirs by remember { mutableStateOf<List<File>>(emptyList()) }
-
-    LaunchedEffect(currentDir, rootMode) {
-        subdirs = viewModel.subdirectoriesOf(currentDir)
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SourcePill(
-                        selected = rootMode == "app",
-                        icon = Icons.Default.GridView,
-                        label = stringResource(R.string.picker_root_app),
-                        onClick = { rootMode = "app"; currentDir = appRoot },
-                        modifier = Modifier.weight(1f)
-                    )
-                    SourcePill(
-                        selected = rootMode == "device",
-                        icon = Icons.Default.PhoneAndroid,
-                        label = stringResource(R.string.picker_root_device),
-                        onClick = {
-                            if (hasDevicePermission) { rootMode = "device"; currentDir = viewModel.deviceStorageRoot }
-                            else onRequestDevicePermission()
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FolderOpen,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = currentDir.absolutePath,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                LazyColumn(modifier = Modifier.heightIn(min = 160.dp, max = 260.dp)) {
-                    if (currentDir.absolutePath != currentRoot.absolutePath) {
-                        item {
-                            Surface(
-                                onClick = { currentDir = currentDir.parentFile ?: currentRoot },
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color.Transparent,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowUpward,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(Modifier.width(10.dp))
-                                    Text(
-                                        text = stringResource(R.string.picker_parent_folder),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    items(subdirs) { dir ->
-                        Surface(
-                            onClick = { currentDir = dir },
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color.Transparent,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Folder,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    text = dir.name,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                    if (subdirs.isEmpty() && currentDir.absolutePath == currentRoot.absolutePath) {
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.FolderOpen,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                    modifier = Modifier.size(36.dp)
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    text = stringResource(R.string.picker_empty),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(currentDir) },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = confirmLabel,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        },
-        dismissButton = {
-            OutlinedButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.action_cancel),
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-    )
-}
 
 fun getIconForFileCategory(item: FileItem): ImageVector {
     if (item.isDirectory) return Icons.Default.Folder

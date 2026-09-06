@@ -48,7 +48,7 @@ class StorageRepository(
     // Safe biometric / PIN file encryption storage
     private val vaultStorageRoot: File = File(context.filesDir, AppConstants.VAULT_DIR_NAME)
     // Keystore-backed AES-GCM encryption for secure notes
-    private val cryptoManager = CryptoManager()
+    private val cryptoManager by lazy { CryptoManager() }
 
     init {
         if (!userStorageRoot.exists()) {
@@ -409,6 +409,7 @@ class StorageRepository(
      */
     suspend fun copyFileOrFolder(source: File, destDir: File): Boolean = withContext(Dispatchers.IO) {
         if (!source.exists()) return@withContext false
+        if (source.isDirectory && (destDir.canonicalPath == source.canonicalPath || destDir.canonicalPath.startsWith(source.canonicalPath + File.separator))) return@withContext false
         if (!destDir.exists() && !destDir.mkdirs()) return@withContext false
         val target = File(destDir, source.name)
         if (target.exists()) return@withContext false
@@ -428,6 +429,7 @@ class StorageRepository(
     suspend fun moveFileOrFolder(source: File, destDir: File): Boolean = withContext(Dispatchers.IO) {
         if (!source.exists()) return@withContext false
         if (source.absolutePath == File(destDir, source.name).absolutePath) return@withContext false
+        if (source.isDirectory && (destDir.canonicalPath == source.canonicalPath || destDir.canonicalPath.startsWith(source.canonicalPath + File.separator))) return@withContext false
         if (!destDir.exists() && !destDir.mkdirs()) return@withContext false
         val target = File(destDir, source.name)
         if (target.exists()) return@withContext false

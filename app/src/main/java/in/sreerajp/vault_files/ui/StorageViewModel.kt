@@ -19,6 +19,9 @@ data class OpenNote(val name: String, val content: String, val file: File)
 /** One file shared into the app from another app's share sheet: its content [uri] and display [name]. */
 data class SharedImport(val uri: Uri, val name: String)
 
+/** Files pending a move or copy to a user-chosen destination directory. */
+data class MoveCopyRequest(val items: List<FileItem>, val isMove: Boolean)
+
 /** UI state for the full-screen text-file preview; null when no preview is open. */
 sealed interface TextPreviewUi {
     val item: FileItem
@@ -163,6 +166,11 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
     // choice survives the app-lock gate until the user is unlocked.
     private val _pendingSharedImports = MutableStateFlow<List<SharedImport>?>(null)
     val pendingSharedImports: StateFlow<List<SharedImport>?> = _pendingSharedImports.asStateFlow()
+
+    // Files marked for copy or move, waiting for the user to navigate to a destination folder
+    // and confirm. Null when no move/copy is pending.
+    private val _pendingMoveCopy = MutableStateFlow<MoveCopyRequest?>(null)
+    val pendingMoveCopy: StateFlow<MoveCopyRequest?> = _pendingMoveCopy.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -641,6 +649,17 @@ class StorageViewModel(application: Application) : AndroidViewModel(application)
     /** Clears the pending shared files (user cancelled, or the import finished). */
     fun clearPendingSharedImports() {
         _pendingSharedImports.value = null
+    }
+
+    /** Records items selected for move or copy so the user can navigate to a destination folder. */
+    fun setPendingMoveCopy(request: MoveCopyRequest) {
+        if (request.items.isEmpty()) return
+        _pendingMoveCopy.value = request
+    }
+
+    /** Clears the pending move/copy operation (cancelled or finished). */
+    fun clearPendingMoveCopy() {
+        _pendingMoveCopy.value = null
     }
 
     /** Saves each pending shared file into [destDir], then clears the pending state. */

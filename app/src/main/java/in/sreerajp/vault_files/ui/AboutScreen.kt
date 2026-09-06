@@ -1,5 +1,7 @@
 package `in`.sreerajp.vault_files.ui
 
+import android.content.Intent
+import androidx.core.net.toUri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,16 +10,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +34,7 @@ import `in`.sreerajp.vault_files.ui.theme.TileBorderDark
 import `in`.sreerajp.vault_files.ui.theme.TileBorderLight
 import `in`.sreerajp.vault_files.BuildConfig
 import `in`.sreerajp.vault_files.R
+import `in`.sreerajp.vault_files.config.ConfigService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,9 +42,15 @@ fun AboutScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val config = remember(context) { ConfigService.loadAndVerify(context) }
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val tileBorder = BorderStroke(1.dp, if (isDark) TileBorderDark else TileBorderLight)
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
+    val detailEntries = remember(config) {
+        config.details.entries.filter { it.key.trim().isNotBlank() && it.value.trim().isNotBlank() }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -59,13 +73,13 @@ fun AboutScreen(
         item {
             Column(modifier = Modifier.padding(top = 4.dp)) {
                 Text(
-                    text = stringResource(R.string.app_name),
+                    text = config.appName.ifBlank { stringResource(R.string.app_name) },
                     fontSize = 25.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
+                    text = stringResource(R.string.about_version, config.version),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.secondary,
@@ -76,10 +90,53 @@ fun AboutScreen(
 
         item { SettingsSectionLabel(stringResource(R.string.about_build_info), Modifier.padding(top = 12.dp)) }
 
-        item { AboutInfoRow(Icons.Default.Person, stringResource(R.string.about_author), BuildConfig.AUTHOR, tileBorder) }
-        item { AboutInfoRow(Icons.Default.Code, stringResource(R.string.about_ide_used), BuildConfig.IDE, tileBorder) }
-        item { AboutInfoRow(Icons.Default.SmartToy, stringResource(R.string.about_ai_version), BuildConfig.AI_VERSION, tileBorder) }
-        item { AboutInfoRow(Icons.Default.Build, stringResource(R.string.about_last_build_date), BuildConfig.BUILD_DATE, tileBorder) }
+        items(detailEntries.size) { index ->
+            val entry = detailEntries[index]
+            val key = entry.key.trim()
+            val value = entry.value.trim()
+            val isEmail = key.equals("email", ignoreCase = true)
+
+            val icon = when {
+                key.contains("author", ignoreCase = true) -> Icons.Default.Person
+                key.contains("ide", ignoreCase = true) -> Icons.Default.Code
+                key.contains("ai", ignoreCase = true) -> Icons.Default.SmartToy
+                key.contains("license", ignoreCase = true) -> Icons.Default.Description
+                isEmail -> Icons.Default.Email
+                else -> Icons.Default.Info
+            }
+
+            val onClick: (() -> Unit)? = if (isEmail) {
+                {
+                    try {
+                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = "mailto:$value".toUri()
+                        }
+                        context.startActivity(emailIntent)
+                    } catch (e: Exception) {
+                        // Activity not found — ignore.
+                    }
+                }
+            } else null
+
+            AboutInfoRow(
+                icon = icon,
+                label = key,
+                value = value,
+                border = tileBorder,
+                onClick = onClick
+            )
+        }
+
+        if (BuildConfig.BUILD_DATE.isNotBlank()) {
+            item {
+                AboutInfoRow(
+                    icon = Icons.Default.Build,
+                    label = stringResource(R.string.about_last_build_date),
+                    value = BuildConfig.BUILD_DATE,
+                    border = tileBorder
+                )
+            }
+        }
 
         item {
             Row(
@@ -115,9 +172,12 @@ private fun AboutInfoRow(
     icon: ImageVector,
     label: String,
     value: String,
-    border: BorderStroke
+    border: BorderStroke,
+    onClick: (() -> Unit)? = null
 ) {
     Surface(
+        onClick = onClick ?: {},
+        enabled = onClick != null,
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = border,
